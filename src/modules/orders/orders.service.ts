@@ -1,89 +1,92 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Order } from './entities/order.entity';
-import { OrderResponseDto } from './dto/order-response.dto';
 import { Repository } from 'typeorm';
 import { plainToInstance } from 'class-transformer';
+import { Order } from './entities/order.entity';
+import { OrderResponseDto } from './dto/order-response.dto';
 import { CreateOrderDto } from './dto/create-order.dto';
-import { CustomersService } from '../customers/customers.service';
 import { UpdateOrderDto } from './dto/update-order.dto';
+import { CustomersService } from '../customers/customers.service';
 
 @Injectable()
 export class OrdersService {
+  constructor(
+    @InjectRepository(Order) private readonly orderRepository: Repository<Order>,
+    private readonly customersService: CustomersService,
+  ) {}
 
-    constructor(
-        @InjectRepository(Order) private orderRepository: Repository<Order>,
-        private readonly customersService: CustomersService
-    ) { }
+  async findAll(): Promise<OrderResponseDto[]> {
+    const orders = await this.orderRepository.find({
+      relations: ['state', 'customer'],
+      order: { id_order: 'ASC' },
+    });
 
-    async findAll(): Promise<OrderResponseDto[]> {
-        const orders = await this.orderRepository.find({ relations: ['state', 'customer'], order: { id_order: 'ASC' } })
-
-        if (!orders || orders.length === 0) {
-            throw new NotFoundException('No hay pedidos creados');
-        }
-
-        return orders.map(ord => plainToInstance(OrderResponseDto, { ...ord, state_name: ord.state.name, customer_name: ord.customer.name }, { excludeExtraneousValues: true }))
+    if (!orders || orders.length === 0) {
+      throw new NotFoundException('No hay pedidos creados');
     }
 
-    async findById(id: number): Promise<OrderResponseDto> {
-        const order = await this.orderRepository.findOne({
-            where: { id_order: id },
-            relations: ['state', 'customer', 'products', 'products.category', 'products.state'] 
-        });
+    return orders.map(ord => this.mapToDto(ord));
+  }
 
-        if (!order) {
-            throw new NotFoundException(`No se encontró la orden con ID ${id}`);
-        }
+  async findById(id: number): Promise<OrderResponseDto> {
+    const order = await this.orderRepository.findOne({
+      where: { id_order: id },
+      relations: ['state', 'customer', 'products', 'products.category', 'products.state'],
+    });
 
-        return plainToInstance(OrderResponseDto, {
-            ...order,
-            state_name: order.state.name,
-            customer_name: order.customer.name,
-            products: order.products.map(p => ({
-                ...p,
-                category_name: p.category.name,
-                state_name: p.state.name,
-                order_id: p.id_order
-            }))
-        }, { excludeExtraneousValues: true });
+    if (!order) throw new NotFoundException(`No se encontró la orden con ID ${id}`);
+
+    return this.mapToDto(order);
+  }
+
+  async createOrder(dto: CreateOrderDto): Promise<OrderResponseDto> {
+    await this.customersService.findById(dto.id_customer);
+
+    if (dto.estimated_delivery_date && new Date(dto.estimated_delivery_date) < new Date()) {
+      throw new BadRequestException('La fecha estimada no puede ser menor que la fecha actual.');
     }
 
-    async createOrder(order: CreateOrderDto): Promise<OrderResponseDto> {
+    const newOrder = this.orderRepository.create({ ...dto, id_state: 1 });
+    const saved = await this.orderRepository.save(newOrder);
 
-        await this.customersService.findById(order.id_customer);
+    // Reutilizamos findById para traer todas las relaciones y el formato correcto
+    return this.findById(saved.id_order);
+  }
 
-        if (order.estimated_delivery_date && new Date(order.estimated_delivery_date) < new Date()) {
-            throw new BadRequestException('La fecha estimada no puede ser menor que la fecha actual.');
-        }
+  async updateOrder(id: number, dto: UpdateOrderDto): Promise<OrderResponseDto> {
+    const order = await this.orderRepository.findOne({
+      where: { id_order: id },
+      relations: ['state', 'customer'],
+    });
 
-        const newOrder = this.orderRepository.create({ ...order, id_state: 1, });
+    if (!order) throw new NotFoundException(`No se encontró la orden con ID ${id}`);
 
-        const savedOrder = await this.orderRepository.save(newOrder);
-
-        const completeOrder = await this.orderRepository.findOne({ where: { id_order: savedOrder.id_order }, relations: ['state', 'customer'] });
-
-        return plainToInstance(OrderResponseDto, { ...completeOrder, state_name: completeOrder!.state.name, customer_name: completeOrder!.customer.name, }, { excludeExtraneousValues: true });
+    if (new Date(dto.estimated_delivery_date) < new Date(order.entry_date)) {
+      throw new BadRequestException('La fecha estimada no puede ser menor que la de ingreso.');
     }
 
-    async updateOrder(id: number, updatedOrder: UpdateOrderDto): Promise<OrderResponseDto> {
-        const order = await this.orderRepository.findOne({ where: { id_order: id }, relations: ['state', 'customer'], });
+    order.estimated_delivery_date = dto.estimated_delivery_date;
+    const saved = await this.orderRepository.save(order);
 
-        if (!order) {
-            throw new NotFoundException(`No se encontró la orden con ID ${id}`);
-        }
+    return this.mapToDto(saved);
+  }
 
-
-        if (updatedOrder.estimated_delivery_date < order.entry_date) {
-            throw new BadRequestException('La fecha estimada no puede ser menor que la fecha de ingreso.');
-
-        }
-
-        order.estimated_delivery_date = updatedOrder.estimated_delivery_date;
-
-        const savedOrder = await this.orderRepository.save(order);
-
-        return plainToInstance(OrderResponseDto, { ...savedOrder, state_name: savedOrder.state.name, customer_name: savedOrder.customer.name }, { excludeExtraneousValues: true });
-    }
-
+  // Método privado para centralizar el mapeo y que el código sea más legible
+  private mapToDto(order: any): OrderResponseDto {
+    return plainToInstance(
+      OrderResponseDto,
+      {
+        ...order,
+        state_name: order.state?.name,
+        customer_name: order.customer?.name,
+        products: order.products?.map(p => ({
+          ...p,
+          category_name: p.category?.name,
+          state_name: p.state?.name,
+          order_id: p.id_order,
+        })),
+      },
+      { excludeExtraneousValues: true },
+    );
+  }
 }

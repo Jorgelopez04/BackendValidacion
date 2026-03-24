@@ -1,39 +1,45 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { EmployeesService } from 'src/modules/employees/employees.service';
-import * as bcrypt from 'bcrypt';
+import { EmployeesService } from '../employees/employees.service';
 import { LoginDto } from './dto/loginDto';
 import { LoginResponseDto } from './dto/login-response.dto';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class AuthService {
-    constructor(private employeesService: EmployeesService, private jwtService: JwtService){}
 
-    async validateEmployee(loginDto: LoginDto): Promise<any>{
-        const employee = await this.employeesService.findByCc(loginDto.cc);
+    // Se añade 'readonly' a ambos para que SonarQube no marque error de mantenibilidad
+    constructor(
+        private readonly employeesService: EmployeesService, 
+        private readonly jwtService: JwtService
+    ) {}
 
-        if(employee && await bcrypt.compare(loginDto.password, employee.password)){
-            const {password, ...result} = employee;
+    async validateEmployee(login: LoginDto): Promise<any> {
+        const employee = await this.employeesService.findByCc(login.cc);
+
+        if (employee && await bcrypt.compare(login.password, employee.password)) {
+            const { password, ...result } = employee;
             return result;
         }
         return null;
     }
 
-    async login(loginDto: LoginDto): Promise<LoginResponseDto>{
-        const validatedEmployee = await this.validateEmployee(loginDto);
-        if(!validatedEmployee){
+    async login(login: LoginDto): Promise<LoginResponseDto> {
+        const validatedEmployee = await this.validateEmployee(login);
+        
+        if (!validatedEmployee) {
             throw new UnauthorizedException('Credenciales inválidas');
         }
 
         const payload = {
             sub: validatedEmployee.id_employee,
             cc: validatedEmployee.cc,
-            id_rol: validatedEmployee.role.id_role
+            id_rol: validatedEmployee.role.id_rol
         };
 
-    
-        const access_token =  this.jwtService.sign(payload);
-        return new LoginResponseDto(access_token, validatedEmployee)
+        const accessToken = this.jwtService.sign(payload);
+        
+        // Retornamos el DTO con el token y los datos del empleado
+        return new LoginResponseDto(accessToken, validatedEmployee);
     }
-
 }

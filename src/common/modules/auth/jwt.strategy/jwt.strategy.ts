@@ -1,17 +1,15 @@
-// En jwt.strategy.ts
-
-import { Injectable, UnauthorizedException } from "@nestjs/common";
-import { ConfigService } from "@nestjs/config";
-import { PassportStrategy } from "@nestjs/passport";
-import { ExtractJwt, Strategy } from "passport-jwt";
-import { EmployeesService } from "src/modules/employees/employees.service";
-import { Employee } from "src/modules/employees/entities/employee.entity";
+import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { PassportStrategy } from '@nestjs/passport';
+import { ExtractJwt, Strategy } from 'passport-jwt';
+import { ConfigService } from '@nestjs/config';
+import { EmployeesService } from '../employees/employees.service';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
     
     constructor(
-        private configService: ConfigService,
+        // Se añade 'readonly' para eliminar el Issue de SonarQube
+        private readonly configService: ConfigService,
         private readonly employeesService: EmployeesService 
     ) {
         super({
@@ -21,16 +19,14 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         });
     }
 
-  
-    async validate(payload: any): Promise<Employee> {
+    async validate(payload: any) {
+        const id_employee = payload.sub;
+        const employee = await this.employeesService.findByIdWithRole(id_employee);
 
-        const employeeId = payload.sub; 
-        const employee = await this.employeesService.findByIdWithRole(employeeId);
-
-        if (!employee || employee.state === 'INACTIVE') {
-
+        if (!employee || employee.state === 'INACTIVO') {
             throw new UnauthorizedException('Credenciales inválidas o empleado inactivo');
         }
+        
         return employee;
     }
 }

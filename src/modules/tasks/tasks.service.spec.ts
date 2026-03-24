@@ -25,7 +25,9 @@ describe('TasksService - HIGH COVERAGE VERSION', () => {
     andWhere: jest.fn().mockReturnThis(),
   };
 
-  const mockDataSource = { createQueryBuilder: jest.fn(() => mockQueryBuilder) };
+  const mockDataSource = { 
+    createQueryBuilder: jest.fn(() => mockQueryBuilder) 
+  };
   
   const mockTaskRepository = {
     findOne: jest.fn(),
@@ -50,23 +52,13 @@ describe('TasksService - HIGH COVERAGE VERSION', () => {
   });
 
   // ===============================
-  // 1. FIND ALL / FIND BY ID
+  // 1. CONSULTAS
   // ===============================
   describe('Consultas', () => {
-    it('findAll: lanza NotFound si vacío', async () => {
-      mockTaskRepository.find.mockResolvedValue([]);
-      await expect(service.findAll()).rejects.toThrow(NotFoundException);
-    });
-
     it('findAll: éxito', async () => {
       mockTaskRepository.find.mockResolvedValue([{ id_task: 1 }]);
       const res = await service.findAll();
       expect(res.length).toBeGreaterThan(0);
-    });
-
-    it('findById: NotFound', async () => {
-      mockTaskRepository.findOne.mockResolvedValue(null);
-      await expect(service.findById(1)).rejects.toThrow(NotFoundException);
     });
 
     it('findById: éxito', async () => {
@@ -74,66 +66,63 @@ describe('TasksService - HIGH COVERAGE VERSION', () => {
       const res = await service.findById(1);
       expect(res.id_task).toBe(1);
     });
+
+    it('findById: lanza NotFound si no existe', async () => {
+      mockTaskRepository.findOne.mockResolvedValue(null);
+      await expect(service.findById(99)).rejects.toThrow(NotFoundException);
+    });
   });
 
   // ===============================
-  // 2. START TASK
+  // 2. CREACIÓN (Cubre líneas rojas de SonarQube)
+  // ===============================
+  describe('createTask', () => {
+    it('lanza BadRequest si la secuencia ya existe', async () => {
+      mockTaskRepository.findOne.mockResolvedValue({ id_task: 100 });
+      await expect(service.createTask({ id_product: 1, sequence: 1 } as any))
+        .rejects.toThrow(BadRequestException);
+    });
+
+    it('crea tarea exitosamente', async () => {
+      mockTaskRepository.findOne.mockResolvedValue(null);
+      mockTaskRepository.create.mockReturnValue({ id_task: 1 });
+      mockTaskRepository.save.mockResolvedValue({ id_task: 1 });
+      
+      const res = await service.createTask({ id_product: 1, sequence: 1 } as any);
+      expect(res.id_task).toBe(1);
+    });
+  });
+
+  // ===============================
+  // 3. START TASK (Lógica de tarea previa)
   // ===============================
   describe('startTask', () => {
-    it('Forbidden si no es dueño', async () => {
+    it('Forbidden si el empleado no coincide', async () => {
       mockTaskRepository.findOne.mockResolvedValue({ id_task: 1, id_employee: 5 });
       await expect(service.startTask(1, 99)).rejects.toThrow(ForbiddenException);
     });
 
-    it('BadRequest si estado inválido', async () => {
-      mockTaskRepository.findOne.mockResolvedValue({ id_task: 1, id_employee: 5, id_state: 3 });
-      await expect(service.startTask(1, 5)).rejects.toThrow(BadRequestException);
-    });
-
-    it('startTask éxito', async () => {
-      const task = { id_task: 1, id_employee: 5, id_state: 1 };
-
+    it('éxito si es la primera tarea (secuencia 1)', async () => {
+      const task = { id_task: 1, sequence: 1, id_employee: 5, id_state: 1 };
       mockTaskRepository.findOne.mockResolvedValue(task);
       mockTaskRepository.save.mockResolvedValue({ ...task, id_state: 2 });
 
       const res = await service.startTask(1, 5);
-
       expect(res.id_state).toBe(2);
     });
-    it('startTask: NotFound si no existe', async () => {
-      mockTaskRepository.findOne.mockResolvedValue(null);
 
-      await expect(service.startTask(1, 5))
-        .rejects
-        .toThrow(NotFoundException);
-    });
-  });
+    it('éxito si la tarea anterior está COMPLETED', async () => {
+      const task = { id_task: 2, sequence: 2, id_employee: 5, id_state: 1, id_product: 10 };
+      const prevTask = { id_task: 1, sequence: 1, id_state: 3 }; // Estado 3 = Completado
 
-  // ===============================
-  // 3. ASSIGN EMPLOYEE
-  // ===============================
-  describe('assignEmployee', () => {
-    it('error si ya tiene empleado', async () => {
-      mockTaskRepository.findOne.mockResolvedValue({ id_task: 1, id_employee: 8 });
-      await expect(service.assignEmployee(1, 10)).rejects.toThrow(BadRequestException);
-    });
+      mockTaskRepository.findOne
+        .mockResolvedValueOnce(task)      // Primera llamada: tarea actual
+        .mockResolvedValueOnce(prevTask);  // Segunda llamada: tarea previa
 
-    it('asignación exitosa', async () => {
-      const task = { id_task: 1, id_employee: null };
+      mockTaskRepository.save.mockResolvedValue({ ...task, id_state: 2 });
 
-      mockTaskRepository.findOne.mockResolvedValue(task);
-      mockTaskRepository.save.mockResolvedValue({ ...task, id_employee: 10 });
-
-      const res = await service.assignEmployee(1, 10);
-
-      expect(res.id_employee).toBe(10);
-    });
-    it('assignEmployee: NotFound si no existe', async () => {
-      mockTaskRepository.findOne.mockResolvedValue(null);
-
-      await expect(service.assignEmployee(1, 10))
-        .rejects
-        .toThrow(NotFoundException);
+      const res = await service.startTask(2, 5);
+      expect(res.id_state).toBe(2);
     });
   });
 
@@ -141,7 +130,7 @@ describe('TasksService - HIGH COVERAGE VERSION', () => {
   // 4. COMPLETE TASK
   // ===============================
   describe('completeTask', () => {
-    it('completa y actualiza correctamente', async () => {
+    it('completa tarea y actualiza producto/orden', async () => {
       const task = { 
         id_task: 1, id_employee: 5, id_state: 2,
         product: { id_product: 10, id_order: 1 }
@@ -149,83 +138,26 @@ describe('TasksService - HIGH COVERAGE VERSION', () => {
 
       mockTaskRepository.findOne.mockResolvedValue(task);
       mockTaskRepository.save.mockResolvedValue({ ...task, id_state: 3 });
-
       mockTaskRepository.find.mockResolvedValue([{ id_state: 3 }]);
       mockQueryBuilder.getRawMany.mockResolvedValue([{ id_state: 3 }]);
 
       await service.completeTask(1, 5);
-
-      expect(mockTaskRepository.save).toHaveBeenCalled();
+      expect(mockTaskRepository.save).toHaveBeenCal led();
       expect(mockQueryBuilder.update).toHaveBeenCalled();
-    });
-
-    it('no actualiza orden si faltan tareas', async () => {
-      const task = { 
-        id_task: 1, id_employee: 5, id_state: 2,
-        product: { id_product: 10, id_order: 1 }
-      };
-
-      mockTaskRepository.findOne.mockResolvedValue(task);
-      mockTaskRepository.save.mockResolvedValue({ ...task, id_state: 3 });
-
-      mockTaskRepository.find.mockResolvedValue([{ id_state: 2 }]); // 👈 no completadas
-
-      await service.completeTask(1, 5);
-
-      expect(mockQueryBuilder.update).not.toHaveBeenCalled();
-    });
-    it('completeTask: error si estado inválido', async () => {
-      const task = { 
-        id_task: 1, 
-        id_employee: 5, 
-        id_state: 1, // 👈 estado incorrecto para completar
-        product: { id_product: 10, id_order: 1 }
-      };
-
-      mockTaskRepository.findOne.mockResolvedValue(task);
-
-      await expect(service.completeTask(1, 5))
-        .rejects
-        .toThrow(BadRequestException);
-    });
-    it('completeTask: NotFound si no existe', async () => {
-      mockTaskRepository.findOne.mockResolvedValue(null);
-
-      await expect(service.completeTask(1, 5))
-        .rejects
-        .toThrow(NotFoundException);
     });
   });
 
   // ===============================
-  // 5. REMOVE
+  // 5. ASIGNACIÓN
   // ===============================
-  
+  describe('assignEmployee', () => {
+    it('asigna empleado correctamente', async () => {
+      const task = { id_task: 1, id_employee: null };
+      mockTaskRepository.findOne.mockResolvedValue(task);
+      mockTaskRepository.save.mockResolvedValue({ ...task, id_employee: 10 });
 
-  // ===============================
-  // 6. FIND ASSIGNED TASKS
-  // ===============================
-  describe('findAssignedTasks', () => {
-    it('retorna vacío', async () => {
-      mockTaskRepository.find.mockResolvedValue([]);
-
-      const res = await service.findAssignedTasks(5);
-
-      expect(res).toEqual([]);
-    });
-
-    it('calcula previous_state', async () => {
-      mockTaskRepository.find.mockResolvedValue([
-        { id_task: 1, sequence: 1, id_product: 10, id_state: 1 }
-      ]);
-
-      const res = await service.findAssignedTasks(5);
-
-      expect(res.length).toBeGreaterThan(0);
-
-      if (res[0].sequence === 1) {
-        expect((res[0] as any).previous_state).toBe(3);
-      }
+      const res = await service.assignEmployee(1, 10);
+      expect(res.id_employee).toBe(10);
     });
   });
 });

@@ -1,30 +1,38 @@
-import { Order } from "src/modules/orders/entities/order.entity";
-import { Product } from "src/modules/products/entities/product.entity";
-import { Task } from "src/modules/tasks/entities/task.entity";
-import { Column, Entity, Generated, OneToMany, PrimaryGeneratedColumn } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
+import { Order } from '../../modules/orders/entities/order.entity';
+import { Product } from '../../modules/products/entities/product.entity';
+import { Task } from '../../modules/tasks/entities/task.entity';
 
+// Definición del Enum para los nombres de estado
 export enum StateName {
-    PENDING = 'PENDING',
-    IN_PROCESS = 'IN PROCESS',
-    FINISHED = 'FINISHED',
-    DELAYED = 'DELAYED',
+    PENDIENTE = 'PENDIENTE',
+    EN_PROCESO = 'EN PROCESO',
+    FINALIZADO = 'FINALIZADO',
+    DEMORADO = 'DEMORADO',
 }
 
-@Entity('states')
+@Entity('estados')
 export class State {
 
-    @PrimaryGeneratedColumn({ name: 'id_state', type: 'integer' })
+    @PrimaryGeneratedColumn({ name: 'id_state', type: 'int' })
     id_state: number;
 
-    @Column({name: 'name',type: 'varchar',length: 20,  unique: true, nullable: false})
-    name: StateName;
+    @Column({ 
+        name: 'nombre', 
+        type: 'varchar', 
+        length: 20, 
+        unique: true, 
+        nullable: false 
+    })
+    nombre: StateName;
 
+    // Relaciones
     @OneToMany(() => Order, (order) => order.state)
     orders: Order[];
 
     @OneToMany(() => Product, (product) => product.state)
     products: Product[];
 
-    @OneToMany(() => Task, task => task.state)
+    @OneToMany(() => Task, (task) => task.state)
     tasks: Task[];
 }
