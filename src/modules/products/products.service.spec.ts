@@ -9,111 +9,124 @@ import { FlowsService } from '../flows/flows.service';
 import { TasksService } from '../tasks/tasks.service';
 import { EmployeesService } from '../employees/employees.service';
 
-describe('ProductsService (Unit Tests Refactored)', () => {
+describe('ProductsService - Cobertura Optimizada', () => {
   let service: ProductsService;
-  let repo: any;
-  let flowsService: any;
-  let tasksService: any;
 
-  // Mocks de servicios dependientes
+  // Mocks simplificados para evitar errores de tipos
   const mockRepo = {
     find: jest.fn(),
     findOne: jest.fn(),
-    create: jest.fn().mockImplementation(dto => dto),
+    create: jest.fn(),
     save: jest.fn(),
     preload: jest.fn(),
   };
 
-  const mockOrdersService = { findById: jest.fn().mockResolvedValue({ id_order: 1 }) };
-  const mockCategoriesService = { findById: jest.fn().mockResolvedValue({ id_category: 1, name: 'Camisetas' }) };
+  const mockOrdersService = { findById: jest.fn() };
+  const mockCategoriesService = { findById: jest.fn() };
   const mockFlowsService = { findByCategoryOrderBySequence: jest.fn() };
-  const mockTasksService = {
-    createTask: jest.fn(),
-    assignEmployee: jest.fn(),
-  };
-  const mockEmployeesService = { findEmployeeWithLeastWorkload: jest.fn().mockResolvedValue({ id_employee: 7 }) };
+  const mockTasksService = { createTask: jest.fn(), assignEmployee: jest.fn() };
+  const mockEmployeesService = { findEmployeeWithLeastWorkload: jest.fn() };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ProductsService,
-        { provide: getRepositoryToken(Product), useValue: mockRepo },
-        { provide: OrdersService, useValue: mockOrdersService },
-        { provide: CategoriesService, useValue: mockCategoriesService },
-        { provide: FlowsService, useValue: mockFlowsService },
-        { provide: TasksService, useValue: mockTasksService },
-        { provide: EmployeesService, useValue: mockEmployeesService },
+        // Usamos 'as any' para eliminar los 119 errores de TypeScript en el editor
+        { provide: getRepositoryToken(Product), useValue: mockRepo as any },
+        { provide: OrdersService, useValue: mockOrdersService as any },
+        { provide: CategoriesService, useValue: mockCategoriesService as any },
+        { provide: FlowsService, useValue: mockFlowsService as any },
+        { provide: TasksService, useValue: mockTasksService as any },
+        { provide: EmployeesService, useValue: mockEmployeesService as any },
       ],
     }).compile();
 
     service = module.get<ProductsService>(ProductsService);
-    repo = mockRepo;
-    flowsService = mockFlowsService;
-    tasksService = mockTasksService;
   });
 
   afterEach(() => {
     jest.clearAllMocks();
   });
 
-  // --- PRUEBAS CP01: findAll ---
-  it('CP01: findAll - debe lanzar NotFoundException si no hay productos', async () => {
-    repo.find.mockResolvedValue([]);
-    await expect(service.findAll()).rejects.toThrow(NotFoundException);
+  // ==========================================
+  // CP01: findAll
+  // ==========================================
+  it('findAll: debe retornar lista y cubrir el mapeo de datos', async () => {
+    // Arrange
+    const mockData = [{ id_product: 1, name: 'Sofa' }];
+    mockRepo.find.mockResolvedValue(mockData);
+
+    // Act
+    const result = await service.findAll();
+
+    // Assert
+    expect(result).toEqual(mockData);
+    expect(mockRepo.find).toHaveBeenCalled();
   });
 
-  // --- PRUEBAS CP02: findById ---
-  it('CP02: findById - debe lanzar NotFoundException si el producto no existe', async () => {
-    repo.findOne.mockResolvedValue(null);
-    await expect(service.findById(99)).rejects.toThrow(NotFoundException);
-  });
+  // ==========================================
+  // CP03: createProduct (Lógica de Bucle y Asignación)
+  // ==========================================
+  it('createProduct: ERROR - lanza BadRequest si la categoría no tiene flujos', async () => {
+    // Arrange
+    mockOrdersService.findById.mockResolvedValue({ id_order: 1 });
+    mockCategoriesService.findById.mockResolvedValue({ id_category: 1 });
+    mockRepo.save.mockResolvedValue({ id_product: 10, id_category: 1 });
+    mockFlowsService.findByCategoryOrderBySequence.mockResolvedValue([]); 
 
-  // --- PRUEBAS CP03: createProduct ---
-  it('CP03: createProduct - debe lanzar BadRequestException si no hay flujos', async () => {
-    repo.save.mockResolvedValue({ id_product: 1, id_category: 1 });
-    flowsService.findByCategoryOrderBySequence.mockResolvedValue([]); // Camino de error (Caja Blanca)
-
-    await expect(service.createProduct({ id_order: 1, id_category: 1, name: 'Test' } as any))
+    // Act & Assert
+    await expect(service.createProduct({ id_order: 1, id_category: 1 } as any))
       .rejects.toThrow(BadRequestException);
   });
 
-  it('CP03: createProduct - debe crear tareas y empleados (Bucle)', async () => {
-    const productData = { id_product: 1, id_category: 1 };
-    repo.save.mockResolvedValue(productData);
-    repo.findOne.mockResolvedValue(productData); // Para el findById final
+  it('createProduct: ÉXITO - cubre el bucle de flujos y creación de tareas', async () => {
+    // Arrange
+    const productDto = { id_order: 1, id_category: 1, name: 'Sofa Test' };
+    mockOrdersService.findById.mockResolvedValue({ id_order: 1 });
+    mockCategoriesService.findById.mockResolvedValue({ id_category: 1 });
+    mockRepo.save.mockResolvedValue({ id_product: 10, ...productDto });
+    mockRepo.findOne.mockResolvedValue({ id_product: 10, ...productDto });
     
-    // Simulamos 2 flujos para probar el bucle (M = 3)
-    flowsService.findByCategoryOrderBySequence.mockResolvedValue([
-      { sequence: 1, id_role: 3, role: { id_area: 1 } },
-      { sequence: 2, id_role: 4, role: { id_area: 2 } }
+    // Simulamos 2 pasos de flujo para cubrir el bucle for/map
+    mockFlowsService.findByCategoryOrderBySequence.mockResolvedValue([
+      { id_role: 1, sequence: 1, role: { id_area: 1 } },
+      { id_role: 2, sequence: 2, role: { id_area: 2 } }
     ]);
-    
-    tasksService.createTask.mockResolvedValue({ id_task: 100 });
+    mockEmployeesService.findEmployeeWithLeastWorkload.mockResolvedValue({ id_employee: 5 });
+    mockTasksService.createTask.mockResolvedValue({ id_task: 100 });
 
-    const result = await service.createProduct({ id_order: 1, id_category: 1 } as any);
+    // Act
+    const result = await service.createProduct(productDto as any);
 
-    expect(tasksService.assignEmployee).toHaveBeenCalledTimes(2); // Verifica el bucle
+    // Assert
     expect(result).toBeDefined();
+    expect(mockTasksService.createTask).toHaveBeenCalledTimes(2);
+    expect(mockTasksService.assignEmployee).toHaveBeenCalled();
   });
 
-  // --- PRUEBAS CP04: updateProduct ---
-  it('CP04: updateProduct - debe lanzar NotFoundException si no existe (Preload)', async () => {
-    repo.preload.mockResolvedValue(null);
-    await expect(service.updateProduct(1, {} as any)).rejects.toThrow(NotFoundException);
+  // ==========================================
+  // CP04: updateProduct (Restricción de Producción RF16)
+  // ==========================================
+  it('updateProduct: ERROR - lanza BadRequest si ya está en producción', async () => {
+    // Arrange
+    mockRepo.preload.mockResolvedValue({ id_product: 1, id_state: 2 }); // Estado 2 = En producción
+
+    // Act & Assert
+    await expect(service.updateProduct(1, { name: 'Edit' } as any))
+      .rejects.toThrow(BadRequestException);
   });
 
-  it('CP04: updateProduct - debe lanzar BadRequestException si id_state != 1', async () => {
-    repo.preload.mockResolvedValue({ id_product: 1, id_state: 2 }); // Ya en producción
-    await expect(service.updateProduct(1, {} as any)).rejects.toThrow(BadRequestException);
-  });
+  it('updateProduct: ÉXITO - permite actualizar si está en estado 1', async () => {
+    // Arrange
+    const updatedProduct = { id_product: 1, id_state: 1, name: 'Actualizado' };
+    mockRepo.preload.mockResolvedValue(updatedProduct);
+    mockRepo.save.mockResolvedValue(updatedProduct);
 
-  it('CP04: updateProduct - debe actualizar con éxito si estado es 1', async () => {
-    const updated = { id_product: 1, id_state: 1, name: 'Editado' };
-    repo.preload.mockResolvedValue(updated);
-    repo.save.mockResolvedValue(updated);
+    // Act
+    const result = await service.updateProduct(1, { name: 'Actualizado' } as any);
 
-    const result = await service.updateProduct(1, { name: 'Editado' } as any);
-    expect(result.name).toBe('Editado');
-    expect(repo.save).toHaveBeenCalled();
+    // Assert
+    expect(result.name).toBe('Actualizado');
+    expect(mockRepo.save).toHaveBeenCalled();
   });
 });

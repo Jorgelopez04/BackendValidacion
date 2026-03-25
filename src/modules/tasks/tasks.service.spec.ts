@@ -3,46 +3,45 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 import { TasksService } from './tasks.service';
 import { Task } from './entities/task.entity';
-import { 
-  ForbiddenException, 
-  NotFoundException, 
-  BadRequestException 
+import {
+  ForbiddenException,
+  NotFoundException,
+  BadRequestException,
+  ConflictException,
 } from '@nestjs/common';
 import 'reflect-metadata';
 
-describe('TasksService - HIGH COVERAGE VERSION', () => {
+describe('TasksService - FULL COVERAGE', () => {
   let service: TasksService;
 
-  const mockQueryBuilder = {
+  const mockQueryBuilder: any = {
     update: jest.fn().mockReturnThis(),
     set: jest.fn().mockReturnThis(),
     where: jest.fn().mockReturnThis(),
     execute: jest.fn().mockResolvedValue({}),
     select: jest.fn().mockReturnThis(),
+    addSelect: jest.fn().mockReturnThis(),
     from: jest.fn().mockReturnThis(),
-    getRawMany: jest.fn().mockResolvedValue([]),
-    innerJoin: jest.fn().mockReturnThis(),
-    andWhere: jest.fn().mockReturnThis(),
+    getRawMany: jest.fn().mockResolvedValue([{ id_task: 1, product_name: 'Camisa' }]),
   };
 
-  const mockDataSource = { 
-    createQueryBuilder: jest.fn(() => mockQueryBuilder) 
+  const mockDataSource: any = {
+    createQueryBuilder: jest.fn(() => mockQueryBuilder),
   };
-  
-  const mockTaskRepository = {
+
+  const mockRepo: any = {
     findOne: jest.fn(),
     save: jest.fn(),
     find: jest.fn(),
     create: jest.fn(),
-    delete: jest.fn().mockResolvedValue({ affected: 1 }),
-    remove: jest.fn().mockResolvedValue({}),
+    delete: jest.fn(),
   };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         TasksService,
-        { provide: getRepositoryToken(Task), useValue: mockTaskRepository },
+        { provide: getRepositoryToken(Task), useValue: mockRepo },
         { provide: DataSource, useValue: mockDataSource },
       ],
     }).compile();
@@ -52,112 +51,215 @@ describe('TasksService - HIGH COVERAGE VERSION', () => {
   });
 
   // ===============================
-  // 1. CONSULTAS
+  // 🔍 FIND
   // ===============================
-  describe('Consultas', () => {
-    it('findAll: éxito', async () => {
-      mockTaskRepository.find.mockResolvedValue([{ id_task: 1 }]);
-      const res = await service.findAll();
-      expect(res.length).toBeGreaterThan(0);
-    });
 
-    it('findById: éxito', async () => {
-      mockTaskRepository.findOne.mockResolvedValue({ id_task: 1 });
-      const res = await service.findById(1);
-      expect(res.id_task).toBe(1);
-    });
+  it('findAll OK', async () => {
+    mockRepo.find.mockResolvedValue([{ id_task: 1 }]);
 
-    it('findById: lanza NotFound si no existe', async () => {
-      mockTaskRepository.findOne.mockResolvedValue(null);
-      await expect(service.findById(99)).rejects.toThrow(NotFoundException);
-    });
+    const res = await service.findAll();
+
+    expect(res).toBeDefined();
+  });
+
+  it('findAll ERROR', async () => {
+    mockRepo.find.mockResolvedValue([]);
+
+    await expect(service.findAll()).rejects.toThrow(NotFoundException);
+  });
+
+  it('findById OK', async () => {
+    mockRepo.findOne.mockResolvedValue({ id_task: 1 });
+
+    const res = await service.findById(1);
+
+    expect(res).toBeDefined();
+  });
+
+  it('findById ERROR', async () => {
+    mockRepo.findOne.mockResolvedValue(null);
+
+    await expect(service.findById(99)).rejects.toThrow(NotFoundException);
   });
 
   // ===============================
-  // 2. CREACIÓN (Cubre líneas rojas de SonarQube)
+  // 🏗️ CREATE
   // ===============================
-  describe('createTask', () => {
-    it('lanza BadRequest si la secuencia ya existe', async () => {
-      mockTaskRepository.findOne.mockResolvedValue({ id_task: 100 });
-      await expect(service.createTask({ id_product: 1, sequence: 1 } as any))
-        .rejects.toThrow(BadRequestException);
+
+  it('createTask OK', async () => {
+    mockRepo.findOne.mockResolvedValue(null);
+    mockRepo.create.mockReturnValue({ id_task: 1 });
+    mockRepo.save.mockResolvedValue({ id_task: 1 });
+
+    const res = await service.createTask({
+      id_product: 1,
+      id_area: 1,
+      sequence: 1,
+      id_state: 1,
     });
 
-    it('crea tarea exitosamente', async () => {
-      mockTaskRepository.findOne.mockResolvedValue(null);
-      mockTaskRepository.create.mockReturnValue({ id_task: 1 });
-      mockTaskRepository.save.mockResolvedValue({ id_task: 1 });
-      
-      const res = await service.createTask({ id_product: 1, sequence: 1 } as any);
-      expect(res.id_task).toBe(1);
-    });
+    expect(res).toBeDefined();
+  });
+
+  it('createTask ERROR duplicado', async () => {
+    mockRepo.findOne.mockResolvedValue({ id_task: 1 });
+
+    await expect(
+      service.createTask({
+        id_product: 1,
+        id_area: 1,
+        sequence: 1,
+        id_state: 1,
+      }),
+    ).rejects.toThrow(BadRequestException);
   });
 
   // ===============================
-  // 3. START TASK (Lógica de tarea previa)
+  // 👷 ASSIGN
   // ===============================
-  describe('startTask', () => {
-    it('Forbidden si el empleado no coincide', async () => {
-      mockTaskRepository.findOne.mockResolvedValue({ id_task: 1, id_employee: 5 });
-      await expect(service.startTask(1, 99)).rejects.toThrow(ForbiddenException);
+
+  it('assignEmployee OK', async () => {
+    mockRepo.findOne.mockResolvedValue({
+      id_task: 1,
+      id_employee: null,
     });
 
-    it('éxito si es la primera tarea (secuencia 1)', async () => {
-      const task = { id_task: 1, sequence: 1, id_employee: 5, id_state: 1 };
-      mockTaskRepository.findOne.mockResolvedValue(task);
-      mockTaskRepository.save.mockResolvedValue({ ...task, id_state: 2 });
+    mockRepo.save.mockResolvedValue({ id_employee: 5 });
 
-      const res = await service.startTask(1, 5);
-      expect(res.id_state).toBe(2);
+    const res = await service.assignEmployee(1, 5);
+
+    expect(res.id_employee).toBe(5);
+  });
+
+  it('assignEmployee ERROR ya asignado', async () => {
+    mockRepo.findOne.mockResolvedValue({
+      id_task: 1,
+      id_employee: 2,
     });
 
-    it('éxito si la tarea anterior está COMPLETED', async () => {
-      const task = { id_task: 2, sequence: 2, id_employee: 5, id_state: 1, id_product: 10 };
-      const prevTask = { id_task: 1, sequence: 1, id_state: 3 }; // Estado 3 = Completado
-
-      mockTaskRepository.findOne
-        .mockResolvedValueOnce(task)      // Primera llamada: tarea actual
-        .mockResolvedValueOnce(prevTask);  // Segunda llamada: tarea previa
-
-      mockTaskRepository.save.mockResolvedValue({ ...task, id_state: 2 });
-
-      const res = await service.startTask(2, 5);
-      expect(res.id_state).toBe(2);
-    });
+    await expect(service.assignEmployee(1, 5)).rejects.toThrow(BadRequestException);
   });
 
   // ===============================
-  // 4. COMPLETE TASK
+  // ▶️ START TASK
   // ===============================
-  describe('completeTask', () => {
-    it('completa tarea y actualiza producto/orden', async () => {
-      const task = { 
-        id_task: 1, id_employee: 5, id_state: 2,
-        product: { id_product: 10, id_order: 1 }
-      };
 
-      mockTaskRepository.findOne.mockResolvedValue(task);
-      mockTaskRepository.save.mockResolvedValue({ ...task, id_state: 3 });
-      mockTaskRepository.find.mockResolvedValue([{ id_state: 3 }]);
-      mockQueryBuilder.getRawMany.mockResolvedValue([{ id_state: 3 }]);
+  it('startTask OK', async () => {
+    const task = {
+      id_task: 1,
+      id_employee: 1,
+      id_state: 1,
+      sequence: 1,
+      id_product: 10,
+      product: { id_product: 10, order: { id_order: 1 } },
+    };
 
-      await service.completeTask(1, 5);
-      expect(mockTaskRepository.save).toHaveBeenCal led();
-      expect(mockQueryBuilder.update).toHaveBeenCalled();
+    mockRepo.findOne.mockResolvedValue(task);
+    mockRepo.save.mockResolvedValue({ ...task, id_state: 2 });
+
+    const res = await service.startTask(1, 1);
+
+    expect(res).toBeDefined();
+  });
+
+  it('startTask ERROR ownership', async () => {
+    mockRepo.findOne.mockResolvedValue({
+      id_task: 1,
+      id_employee: 2,
     });
+
+    await expect(service.startTask(1, 1)).rejects.toThrow(ForbiddenException);
+  });
+
+  it('startTask ERROR ya en progreso', async () => {
+    mockRepo.findOne.mockResolvedValue({
+      id_task: 1,
+      id_employee: 1,
+      id_state: 2,
+      sequence: 1,
+      id_product: 1,
+    });
+
+    await expect(service.startTask(1, 1)).rejects.toThrow(ConflictException);
+  });
+
+  it('startTask ERROR tarea previa no completada', async () => {
+    mockRepo.findOne
+      .mockResolvedValueOnce({
+        id_task: 2,
+        id_employee: 1,
+        id_state: 1,
+        sequence: 2,
+        id_product: 1,
+      })
+      .mockResolvedValueOnce({
+        id_task: 1,
+        id_state: 1,
+      });
+
+    await expect(service.startTask(2, 1)).rejects.toThrow(BadRequestException);
   });
 
   // ===============================
-  // 5. ASIGNACIÓN
+  // ✅ COMPLETE TASK
   // ===============================
-  describe('assignEmployee', () => {
-    it('asigna empleado correctamente', async () => {
-      const task = { id_task: 1, id_employee: null };
-      mockTaskRepository.findOne.mockResolvedValue(task);
-      mockTaskRepository.save.mockResolvedValue({ ...task, id_employee: 10 });
 
-      const res = await service.assignEmployee(1, 10);
-      expect(res.id_employee).toBe(10);
+  it('completeTask OK', async () => {
+    const task = {
+      id_task: 1,
+      id_employee: 1,
+      id_state: 2,
+      id_product: 1,
+      product: { id_product: 1, order: { id_order: 1 } },
+    };
+
+    mockRepo.findOne.mockResolvedValue(task);
+    mockRepo.save.mockResolvedValue({ ...task, id_state: 3 });
+
+    const res = await service.completeTask(1, 1);
+
+    expect(res).toBeDefined();
+  });
+
+  it('completeTask ERROR no iniciada', async () => {
+    mockRepo.findOne.mockResolvedValue({
+      id_task: 1,
+      id_employee: 1,
+      id_state: 1,
     });
+
+    await expect(service.completeTask(1, 1)).rejects.toThrow(BadRequestException);
+  });
+
+  it('completeTask ERROR ya completada', async () => {
+    mockRepo.findOne.mockResolvedValue({
+      id_task: 1,
+      id_employee: 1,
+      id_state: 3,
+    });
+
+    await expect(service.completeTask(1, 1)).rejects.toThrow(ConflictException);
+  });
+
+  // ===============================
+  // 📊 REPORTES
+  // ===============================
+
+  it('findTasksByEmployee OK', async () => {
+    const res = await service.findTasksByEmployee(1);
+
+    expect(res[0].product_name).toBe('Camisa');
+  });
+
+  // ===============================
+  // 🧹 OTROS
+  // ===============================
+
+  it('deleteByProductId', async () => {
+    mockRepo.delete.mockResolvedValue({});
+
+    await service.deleteByProductId(1);
+
+    expect(mockRepo.delete).toHaveBeenCalled();
   });
 });

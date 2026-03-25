@@ -3,5 +3,5 @@ projectKey=jorgelopez04_BackendValidacion
 serverUrl=https://sonarcloud.io
 serverVersion=8.0.0.83834
 dashboardUrl=https://sonarcloud.io/dashboard?id=jorgelopez04_BackendValidacion
-ceTaskId=AZ0g-oeeJQLdBRfUURq0
-ceTaskUrl=https://sonarcloud.io/api/ce/task?id=AZ0g-oeeJQLdBRfUURq0
+ceTaskId=AZ0iciVFg2uEEdJp89iH
+ceTaskUrl=https://sonarcloud.io/api/ce/task?id=AZ0iciVFg2uEEdJp89iH

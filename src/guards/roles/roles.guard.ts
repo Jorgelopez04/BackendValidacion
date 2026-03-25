@@ -7,29 +7,31 @@ import { Employee } from "src/modules/employees/entities/employee.entity";
 @Injectable()
 export class RolesGuard implements CanActivate {
 
-  constructor(private reflector: Reflector) { }
+  // 1. Agregamos 'readonly' para cumplir con la regla de inmutabilidad
+  constructor(private readonly reflector: Reflector) { }
 
-  canActivate(context: ExecutionContext,): boolean | Promise<boolean> | Observable<boolean> {
+  canActivate(context: ExecutionContext): boolean | Promise<boolean> | Observable<boolean> {
     const requiredRoles = this.reflector.getAllAndOverride<string[]>(ROLES_KEY, [
       context.getHandler(),
       context.getClass()
     ]);
 
     if (!requiredRoles) {
-      return true
+      return true;
     }
 
     const { user } = context.switchToHttp().getRequest() as { user: Employee };
 
- 
-    if (!user.role || !user.role.name) {
+    // 2. Usamos Optional Chaining para una validación más limpia
+    if (!user?.role?.name) {
       throw new ForbiddenException('No se pudo verificar el rol del usuario.');
     }
 
-    const hasRole = requiredRoles.some((roleName) => user.role.name === roleName);
+    // 3. Cambiamos .some() por .includes() como sugiere el scanner
+    const hasRole = requiredRoles.includes(user.role.name);
 
     if (!hasRole) {
-      throw new ForbiddenException('No tienes permiso para acceder a este recurso. Tu rol es: ' + user.role.name);
+      throw new ForbiddenException(`No tienes permiso para acceder a este recurso. Tu rol es: ${user.role.name}`);
     }
 
     return true;

@@ -12,46 +12,46 @@ import { Roles } from 'src/common/decorators/roles/roles.decorator';
 @UseGuards(AuthGuard('jwt'), RolesGuard)
 @Roles('ADMIN')
 export class OrdersController {
-    constructor(private ordersService: OrdersService){}
+  // 1. Se añade 'readonly' para cumplir con la regla de inmutabilidad
+  constructor(private readonly ordersService: OrdersService) {}
 
-    @Get('all')
-    async findAll(): Promise<BaseApplicationResponseDto<OrderResponseDto[]>>{
-        const orders = await this.ordersService.findAll()
-        return{
-            statusCode: 200, 
-            message: 'Pedidos obtenidos correctamente',
-            data: orders
-        }
-    }
+  @Get('all')
+  async findAll(): Promise<BaseApplicationResponseDto<OrderResponseDto[]>> {
+    const orders = await this.ordersService.findAll();
+    return {
+      statusCode: 200,
+      message: 'Pedidos obtenidos correctamente',
+      data: orders
+    };
+  }
 
-    @Get(':id')
-    async findById(@Param('id') id: string): Promise<BaseApplicationResponseDto<OrderResponseDto>>{
-        const order = await this.ordersService.findById(+id)
-        return{
-            statusCode: 200, 
-            message: 'Pedido obtenido correctamente',
-            data: order
-        }
-    }
+  @Get(':id')
+  async findById(@Param('id') id: string): Promise<BaseApplicationResponseDto<OrderResponseDto>> {
+    const order = await this.ordersService.findById(+id);
+    return {
+      statusCode: 200,
+      message: 'Pedido obtenido correctamente',
+      data: order
+    };
+  }
 
-    @Post()
-    async createOrder(@Body() newOrder: CreateOrderDto): Promise<BaseApplicationResponseDto<OrderResponseDto>>{
-        const order = await this.ordersService.createOrder(newOrder)
-        return{
-            statusCode: 201, 
-            message: 'Pedido creado correctamente',
-            data: order
-        }
-    }
+  @Post()
+  async createOrder(@Body() newOrder: CreateOrderDto): Promise<BaseApplicationResponseDto<OrderResponseDto>> {
+    const order = await this.ordersService.createOrder(newOrder);
+    return {
+      statusCode: 201,
+      message: 'Pedido creado correctamente',
+      data: order
+    };
+  }
 
-    @Patch(':id')
-    async updateOrder(@Param('id') id: string, @Body() updateOrder: UpdateOrderDto): Promise<BaseApplicationResponseDto<OrderResponseDto>>{
-        const updatedOrder = await this.ordersService.updateOrder(+id, updateOrder);
-        return{
-            statusCode: 202, 
-            message: 'Pedido actualizado correctamente',
-            data: updatedOrder
-        }
-    }
-
+  @Patch(':id')
+  async updateOrder(@Param('id') id: string, @Body() updateOrder: UpdateOrderDto): Promise<BaseApplicationResponseDto<OrderResponseDto>> {
+    const updatedOrder = await this.ordersService.updateOrder(+id, updateOrder);
+    return {
+      statusCode: 202,
+      message: 'Pedido actualizado correctamente',
+      data: updatedOrder
+    };
+  }
 }

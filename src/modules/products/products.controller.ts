@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Delete, Param, Body, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Param, Body, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { ProductsService } from './products.service';
 import { BaseApplicationResponseDto } from 'src/common/dto/base-application-response.dto';
@@ -9,14 +9,12 @@ import { RolesGuard } from 'src/guards/roles/roles.guard';
 import { Roles } from 'src/common/decorators/roles/roles.decorator';
 
 @Controller('products')
-@UseGuards(AuthGuard('jwt'), RolesGuard)
-@Roles('ADMIN')
+@UseGuards(AuthGuard('jwt'), RolesGuard) // Seguridad global aplicada correctamente
 export class ProductsController {
 
   constructor(private readonly productsService: ProductsService) { }
 
   @Get()
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('ADMIN')
   async findAll(): Promise<BaseApplicationResponseDto<ProductResponseDto[]>> {
     const products = await this.productsService.findAll();
@@ -28,7 +26,6 @@ export class ProductsController {
   }
 
   @Get(':id')
-  @UseGuards(RolesGuard)
   @Roles('ADMIN', 'Esqueletería', 'Corte', 'Tapicero', 'Costurero', 'Pintor')
   async findById(@Param('id') id: string): Promise<BaseApplicationResponseDto<ProductResponseDto>> {
     const product = await this.productsService.findById(+id);
@@ -40,7 +37,6 @@ export class ProductsController {
   }
 
   @Post()
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('ADMIN')
   async createProduct(@Body() createProductDto: CreateProductDto): Promise<BaseApplicationResponseDto<ProductResponseDto>> {
     const product = await this.productsService.createProduct(createProductDto);
@@ -52,7 +48,6 @@ export class ProductsController {
   }
 
   @Patch(':id')
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('ADMIN')
   async updateProduct(@Param('id') id: string, @Body() updateProductDto: UpdateProductDto): Promise<BaseApplicationResponseDto<ProductResponseDto>> {
     const product = await this.productsService.updateProduct(+id, updateProductDto);

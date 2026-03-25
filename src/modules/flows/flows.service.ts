@@ -12,7 +12,8 @@ import { UpdateFlowDto } from './dto/update-flow.dto';
 @Injectable()
 export class FlowsService {
     constructor(
-        @InjectRepository(Flow) private flowRepository: Repository<Flow>,
+        // 1. Se añade 'readonly' para cumplir con la regla de SonarQube
+        @InjectRepository(Flow) private readonly flowRepository: Repository<Flow>,
         private readonly roleService: RolesService,
         private readonly categoriesService: CategoriesService
     ) { }
@@ -24,30 +25,29 @@ export class FlowsService {
             throw new NotFoundException('No se encontraron flujos');
         }
 
-        return flows.map(flow => plainToInstance(FlowResponseDto, flow, { excludeExtraneousValues: true }))
+        return flows.map(flow => plainToInstance(FlowResponseDto, flow, { excludeExtraneousValues: true }));
     }
 
     async findById(id: number): Promise<FlowResponseDto> {
         const flow = await this.flowRepository.findOne({ where: { id_flow: id }, relations: ['role', 'category'] });
 
         if (!flow) {
-            throw new NotFoundException('El  flujo no existe');
+            throw new NotFoundException('El flujo no existe');
         }
 
-        return plainToInstance(FlowResponseDto, flow, { excludeExtraneousValues: true })
+        return plainToInstance(FlowResponseDto, flow, { excludeExtraneousValues: true });
     }
 
     async createFlow(createFlow: CreateFlowDto): Promise<FlowResponseDto> {
-
         const existingRole = await this.roleService.findById(createFlow.id_role);
 
         if (!existingRole) {
             throw new NotFoundException('El rol ingresado no existe');
         }
 
-        const existingCateory = await this.categoriesService.findById(createFlow.id_category);
+        const existingCategory = await this.categoriesService.findById(createFlow.id_category);
 
-        if (!existingCateory) {
+        if (!existingCategory) {
             throw new NotFoundException('La categoría ingresada no existe');
         }
 
@@ -71,59 +71,62 @@ export class FlowsService {
             );
         }
 
-
         const newFlow = this.flowRepository.create(createFlow);
         const savedFlow = await this.flowRepository.save(newFlow);
-        return plainToInstance(FlowResponseDto, savedFlow)
+        return plainToInstance(FlowResponseDto, savedFlow, { excludeExtraneousValues: true });
     }
 
     async updateFlow(id: number, updateFlow: UpdateFlowDto): Promise<FlowResponseDto> {
+        const existingFlow = await this.flowRepository.findOne({ where: { id_flow: id } });
 
-    const existingFlow = await this.flowRepository.findOne({where: { id_flow: id },});
-
-    if (!existingFlow) {
-        throw new NotFoundException('El flujo no existe');
-    }
-
-    if (updateFlow.id_role && updateFlow.id_role !== existingFlow.id_role) {
-        const existingRole = await this.roleService.findById(updateFlow.id_role);
-        if (!existingRole) {
-            throw new NotFoundException('El rol ingresado no existe');
+        if (!existingFlow) {
+            throw new NotFoundException('El flujo no existe');
         }
 
-        const duplicateRole = await this.flowRepository.findOne({where: { id_category: existingFlow.id_category, id_role: updateFlow.id_role },});
+        if (updateFlow.id_role && updateFlow.id_role !== existingFlow.id_role) {
+            const existingRole = await this.roleService.findById(updateFlow.id_role);
+            if (!existingRole) {
+                throw new NotFoundException('El rol ingresado no existe');
+            }
 
-        if (duplicateRole) {
-            throw new BadRequestException(
-                `El rol ${updateFlow.id_role} ya está asignado al flujo de la categoría ${existingFlow.id_category}`,
-            );
+            const duplicateRole = await this.flowRepository.findOne({ 
+                where: { id_category: existingFlow.id_category, id_role: updateFlow.id_role } 
+            });
+
+            if (duplicateRole) {
+                throw new BadRequestException(
+                    `El rol ${updateFlow.id_role} ya está asignado al flujo de la categoría ${existingFlow.id_category}`,
+                );
+            }
+
+            existingFlow.id_role = updateFlow.id_role;
         }
 
-        existingFlow.id_role = updateFlow.id_role;
-    }
+        if (updateFlow.sequence && updateFlow.sequence !== existingFlow.sequence) {
+            const duplicateSequence = await this.flowRepository.findOne({ 
+                where: { id_category: existingFlow.id_category, sequence: updateFlow.sequence } 
+            });
 
-  
-    if (updateFlow.sequence && updateFlow.sequence !== existingFlow.sequence) {
+            if (duplicateSequence) {
+                throw new BadRequestException(`Ya existe un flujo con la secuencia ${updateFlow.sequence} en la categoría ${existingFlow.id_category}`);
+            }
 
-        const duplicateSequence = await this.flowRepository.findOne({where: { id_category: existingFlow.id_category, sequence: updateFlow.sequence },});
-
-        if (duplicateSequence) {
-            throw new BadRequestException(`Ya existe un flujo con la secuencia ${updateFlow.sequence} en la categoría ${existingFlow.id_category}`);
+            existingFlow.sequence = updateFlow.sequence;
         }
 
-        existingFlow.sequence = updateFlow.sequence;
+        const updatedFlow = await this.flowRepository.save(existingFlow);
+        return plainToInstance(FlowResponseDto, updatedFlow, { excludeExtraneousValues: true });
     }
-
-    const updatedFlow = await this.flowRepository.save(existingFlow);
-    return plainToInstance(FlowResponseDto, updatedFlow, { excludeExtraneousValues: true });
-}
-
 
     async deleteFlow(): Promise<void> {
         throw new BadRequestException('Los flujos no pueden eliminarse una vez creados');
     }
 
-    async findByCategoryOrderBySequence(idCategory: number): Promise<Flow[]>{
-        return await this.flowRepository.find({where: {id_category: idCategory}, relations: ['role', 'role.area'], order: {sequence: 'ASC'}})
+    async findByCategoryOrderBySequence(idCategory: number): Promise<Flow[]> {
+        return await this.flowRepository.find({
+            where: { id_category: idCategory },
+            relations: ['role', 'role.area'],
+            order: { sequence: 'ASC' }
+        });
     }
 }

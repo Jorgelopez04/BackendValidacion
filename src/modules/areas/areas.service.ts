@@ -9,7 +9,8 @@ import { AreaResponseDto } from './dto/area-respose.dto';
 @Injectable()
 export class AreasService {
   constructor(
-    @InjectRepository(Area) private areaRepository: Repository<Area>,
+    // 1. Añadimos 'readonly' para eliminar el Issue de SonarQube
+    @InjectRepository(Area) private readonly areaRepository: Repository<Area>,
   ) { }
 
   async findAll(): Promise<AreaResponseDto[]> {
@@ -23,7 +24,6 @@ export class AreasService {
   }
 
   async findById(id: number): Promise<AreaResponseDto> {
-
     const area = await this.areaRepository.findOne({ where: { id_area: id }, relations: ['roles'], });
 
     if (!area) {
@@ -46,7 +46,6 @@ export class AreasService {
   }
 
   async updateArea(id: number, updateArea: CreateAreaDto): Promise<AreaResponseDto> {
-
     const areaWithSameName = await this.areaRepository.findOneBy({ name: updateArea.name, id_area: Not(id) });
 
     if (areaWithSameName) {
@@ -70,6 +69,7 @@ export class AreasService {
       throw new NotFoundException('Área no encontrada');
     }
 
+    // Validación lógica de negocio importante para TailorFlow
     if (area.roles && area.roles.length > 0) {
       throw new BadRequestException('No se puede eliminar el área porque tiene roles asociados');
     }

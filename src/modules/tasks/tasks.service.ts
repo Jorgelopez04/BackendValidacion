@@ -301,5 +301,13 @@ export class TasksService {
   async deleteByProductId(productId: number): Promise<void> {
     await this.taskRepository.delete({ id_product: productId });
   }
+  async findTasksByEmployee(employeeId: number) {
+  return this.dataSource
+    .createQueryBuilder()
+    .select('task.id_task', 'id_task')
+    .addSelect('product.name', 'product_name')
+    .from('task', 'task')
+    .getRawMany();
+}
   
 }

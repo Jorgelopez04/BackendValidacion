@@ -13,7 +13,8 @@ import { Roles } from 'src/common/decorators/roles/roles.decorator';
 @Roles('ADMIN')
 export class CustomersController {
 
-    constructor(private customersService: CustomersService) { }
+    // Se añade 'readonly' para cumplir con la regla de mantenibilidad detectada
+    constructor(private readonly customersService: CustomersService) { }
 
     @Get('all')
     async findAll(): Promise<BaseApplicationResponseDto<CustomerResponseDto[]>> {
@@ -28,7 +29,7 @@ export class CustomersController {
 
     @Get(':id')
     async findById(@Param('id') id: string): Promise<BaseApplicationResponseDto<CustomerResponseDto>> {
-        const customer = await this.customersService.findById(+id)
+        const customer = await this.customersService.findById(+id);
         return {
             statusCode: 200,
             message: 'Cliente obtenido correctamente',
@@ -55,5 +56,4 @@ export class CustomersController {
             data: customer
         };
     }
-
 }

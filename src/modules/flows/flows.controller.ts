@@ -1,4 +1,4 @@
-import { BadRequestException, Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import { FlowsService } from './flows.service';
 import { BaseApplicationResponseDto } from 'src/common/dto/base-application-response.dto';
 import { FlowResponseDto } from './dto/flow-response.dto';
@@ -13,50 +13,51 @@ import { Roles } from 'src/common/decorators/roles/roles.decorator';
 @Roles('ADMIN')
 export class FlowsController {
 
-    constructor(private flowsService: FlowsService) { }
+    // 1. Se añade 'readonly' para cumplir con la regla de inmutabilidad
+    constructor(private readonly flowsService: FlowsService) { }
 
     @Get('all')
     async findAll(): Promise<BaseApplicationResponseDto<FlowResponseDto[]>> {
-        const flows = await this.flowsService.findAll()
+        const flows = await this.flowsService.findAll();
         return {
             statusCode: 200,
             message: 'Flujos obtenidos correctamente',
             data: flows
-        }
+        };
     }
 
     @Get(':id')
     async findById(@Param('id') id: string): Promise<BaseApplicationResponseDto<FlowResponseDto>> {
         const flow = await this.flowsService.findById(+id);
-        return{
+        return {
             statusCode: 200, 
             message: 'Flujo obtenido correctamente',
             data: flow
-        }
+        };
     }
 
     @Post()
-    async createFlow(@Body() newFlow: CreateFlowDto): Promise<BaseApplicationResponseDto<FlowResponseDto>>{
+    async createFlow(@Body() newFlow: CreateFlowDto): Promise<BaseApplicationResponseDto<FlowResponseDto>> {
         const flow = await this.flowsService.createFlow(newFlow);
-        return{
+        return {
             statusCode: 201, 
             message: 'Flujo creado correctamente',
             data: flow
-        }
+        };
     }
 
     @Patch(':id')
-    async updateFlow(@Param('id') id: string, @Body() updatedFlow: UpdateFlowDto){
+    async updateFlow(@Param('id') id: string, @Body() updatedFlow: UpdateFlowDto) {
         const newFlow = await this.flowsService.updateFlow(+id, updatedFlow);
-        return{
+        return {
             statusCode: 202, 
-            message: 'Rol actualizado correctamente',
+            message: 'Flujo actualizado correctamente', // Corregido el mensaje de "Rol" a "Flujo"
             data: newFlow
-        }
+        };
     }
 
     @Delete()
-    async deleteFlow(): Promise<void>{
-        return this.flowsService.deleteFlow()
+    async deleteFlow(): Promise<void> {
+        return this.flowsService.deleteFlow();
     }
 }
