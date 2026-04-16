@@ -9,7 +9,7 @@
     "target": "ES2021",
     "sourceMap": true,
     "outDir": "./dist",
-    "baseUrl": "./",
+    "baseUrl": ".",
     "incremental": true,
     "skipLibCheck": true,
     "strictNullChecks": true,
@@ -18,27 +18,11 @@
     "forceConsistentCasingInFileNames": true,
     "noFallthroughCasesInSwitch": false,
     "esModuleInterop": true,
-    "types": ["jest", "node"], 
+    "types": ["jest", "node"],
     "paths": {
       "src/*": ["src/*"]
     }
   },
-  "include": ["src/**/*", "coverage", "coverage"],
-  "exclude": ["node_modules", "dist", "test"],
-  "jest": {
-    "moduleFileExtensions": ["js", "json", "ts"],
-    "rootDir": "src",
-    "testRegex": ".*\\.spec\\.ts$",
-    "transform": {
-      "^.+\\.(t|j)s$": "ts-jest"
-    },
-    "collectCoverageFrom": [
-      "**/*.service.ts"
-    ],
-    "coverageDirectory": "../coverage",
-    "testEnvironment": "node",
-    "moduleNameMapper": {
-      "^src/(.*)$": "<rootDir>/../src/$1"
-    }
-  }
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "test"]
 }

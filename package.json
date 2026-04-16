@@ -1,7 +1,7 @@
 {
   "name": "backend-tailorflow",
   "version": "0.0.1",
-  "description": "",
+  "description": "Sistema de gestión de producción",
   "author": "",
   "private": true,
   "license": "UNLICENSED",
@@ -17,7 +17,8 @@
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "jest --config ./test/jest-e2e.json"
+    "test:e2e": "jest --config ./test/jest-e2e.json",
+    "sonar": "npx sonar-scanner -Dsonar.token=TU_TOKEN"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
@@ -69,23 +70,36 @@
     "typescript-eslint": "^8.20.0"
   },
   "jest": {
-  "rootDir": ".",
-  "moduleFileExtensions": [
-    "js",
-    "json",
-    "ts"
-  ],
-  "testRegex": ".*\\.spec\\.ts$",
-  "transform": {
-    "^.+\\.(t|j)s$": "ts-jest"
-  },
-  "moduleNameMapper": {
-    "^src/(.*)$": "<rootDir>/src/$1"
-  },
-  "testEnvironment": "node",
-  "collectCoverage": true,
-  "coverageDirectory": "coverage",
-  "coverageReporters": ["lcov", "text"]
+    "moduleFileExtensions": [
+      "js",
+      "json",
+      "ts"
+    ],
+    "rootDir": ".",
+    "testRegex": ".*\\.spec\\.ts$",
+    "transform": {
+      "^.+\\.(t|j)s$": "ts-jest"
+    },
+    "moduleNameMapper": {
+      "^src/(.*)$": "<rootDir>/src/$1"
+    },
+    "testEnvironment": "node",
+    "collectCoverage": true,
+    "collectCoverageFrom": [
+      "src/**/*.ts"
+    ],
+    "coveragePathIgnorePatterns": [
+      "node_modules",
+      "dist",
+      ".module.ts",
+      "main.ts",
+      "src/common/modules/auth"
+    ],
+    "coverageDirectory": "coverage",
+    "coverageReporters": [
+      "lcov",
+      "text",
+      "text-summary"
+    ]
+  }
 }
-}
-

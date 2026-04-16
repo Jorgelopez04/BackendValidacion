@@ -90,7 +90,7 @@ export class ProductsService {
       // Crear la tarea para la secuencia actual
       const task = await this.tasksService.createTask({
         id_product: product.id_product,
-        id_area: flow.role.id_area,
+        id_area: flow.role.id_area!,
         sequence: flow.sequence,
         id_state: 1
       });

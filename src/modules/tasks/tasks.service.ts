@@ -308,6 +308,6 @@ export class TasksService {
     .addSelect('product.name', 'product_name')
     .from('task', 'task')
     .getRawMany();
-}
+} 
   
 }

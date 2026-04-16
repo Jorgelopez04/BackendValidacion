@@ -77,8 +77,9 @@ export class TasksController {
     @Get(':id/product-tasks')
     @UseGuards(RolesGuard)
     @Roles('Esqueletería', 'Corte', 'Tapicero', 'Costurero', 'Pintor')
-    async getProductTasks(@Param('id') id:string){
-        const tasks = await this.tasksService.getProductTask(+id);
+    async getProductTasks(@Param('id') id: string) {
+        // Cambiamos getProductTask por findByProductId
+        const tasks = await this.tasksService.findByProductId(+id); 
         return {
             statusCode: 200,
             message: 'Tareas mostradas correctamente',

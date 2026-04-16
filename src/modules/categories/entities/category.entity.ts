@@ -1,21 +1,22 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
-import { Flow } from 'src/modules/flows/entities/flow.entity';
-import { Product } from 'src/modules/products/entities/product.entity';
+import { Flow } from "src/modules/flows/entities/flow.entity";
+import { Product } from "src/modules/products/entities/product.entity";
+import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 
-@Entity({ name: 'categories' })
+@Entity('categories')
 export class Category {
-  @PrimaryGeneratedColumn({ name: 'id_category', type: 'integer' })
-  id_category: number;
+  @PrimaryGeneratedColumn({ name: 'id_category' })
+  id_category!: number;
 
-  @Column({ name: 'name', type: 'varchar', length: 50, unique: true })
-  name: string;
+  @Column({ unique: true })
+  name!: string;
 
-  @Column({ name: 'description', type: 'varchar', length: 100, nullable: true })
-  description: string;
+  @Column({ name: 'description', type: 'varchar', length: 255, nullable: true })
+  description?: string;
 
+  // El "!" le dice a TypeScript: "Tranquilo, TypeORM se encargará de esto"
   @OneToMany(() => Flow, (flow) => flow.category)
-  flows: Flow[];
+  flows!: Flow[]; 
 
   @OneToMany(() => Product, (product) => product.category)
-  products: Product[];
+  products!: Product[]; 
 }

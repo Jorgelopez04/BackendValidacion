@@ -15,24 +15,30 @@ import { TasksModule } from './modules/tasks/tasks.module';
 import { AuthModule } from './common/modules/auth/auth.module';
 
 @Module({
-  imports: [RolesModule, 
-    ConfigModule.forRoot({isGlobal: true}),
+  imports: [
+    RolesModule,
+    ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRootAsync({
-    imports: [ConfigModule],
-    
-    inject: [ConfigService],
-    useFactory: (configService : ConfigService) => ({
-      type: 'postgres',
-      host: configService.get<string>('DB_HOST'),
-      port: configService.get<number>('DB_PORT'),
-      username: configService.get<string>('DB_USER'),
-      password: configService.get<string>('DB_PASSWORD'),
-      database: configService.get<string>('DB_NAME'),
-      ssl: configService.get<boolean>('DB_SSL') ? { rejectUnauthorized: false } : false,
-      entities: [__dirname+ '/**/*.entity{.ts,.js}'],
-      synchronize: true,
-    })
-  }),
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => {
+        // Obtenemos el valor de SSL y lo forzamos a string para compararlo correctamente
+        const sslValue = configService.get('DB_SSL')?.toString().toLowerCase();
+        
+        return {
+          type: 'postgres',
+          host: configService.get<string>('DB_HOST'),
+          port: configService.get<number>('DB_PORT'),
+          username: configService.get<string>('DB_USER'),
+          password: configService.get<string>('DB_PASSWORD'),
+          database: configService.get<string>('DB_NAME'),
+          // Solución: Si es 'true' (string o bool), activa SSL con el bypass de certificados
+          ssl: sslValue === 'true' ? { rejectUnauthorized: false } : false,
+          entities: [__dirname + '/**/*.entity{.ts,.js}'],
+          synchronize: false,
+        };
+      },
+    }),
     EmployeesModule,
     AreasModule,
     CategoriesModule,
@@ -42,7 +48,7 @@ import { AuthModule } from './common/modules/auth/auth.module';
     ProductsModule,
     TasksModule,
     AuthModule,
-   ],
+  ],
   controllers: [AppController],
   providers: [AppService],
 })

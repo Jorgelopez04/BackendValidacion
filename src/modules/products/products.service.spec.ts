@@ -9,10 +9,9 @@ import { FlowsService } from '../flows/flows.service';
 import { TasksService } from '../tasks/tasks.service';
 import { EmployeesService } from '../employees/employees.service';
 
-describe('ProductsService - Cobertura Optimizada', () => {
+describe('ProductsService - Cobertura Máxima (AAA)', () => {
   let service: ProductsService;
 
-  // Mocks simplificados para evitar errores de tipos
   const mockRepo = {
     find: jest.fn(),
     findOne: jest.fn(),
@@ -31,13 +30,12 @@ describe('ProductsService - Cobertura Optimizada', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ProductsService,
-        // Usamos 'as any' para eliminar los 119 errores de TypeScript en el editor
-        { provide: getRepositoryToken(Product), useValue: mockRepo as any },
-        { provide: OrdersService, useValue: mockOrdersService as any },
-        { provide: CategoriesService, useValue: mockCategoriesService as any },
-        { provide: FlowsService, useValue: mockFlowsService as any },
-        { provide: TasksService, useValue: mockTasksService as any },
-        { provide: EmployeesService, useValue: mockEmployeesService as any },
+        { provide: getRepositoryToken(Product), useValue: mockRepo },
+        { provide: OrdersService, useValue: mockOrdersService },
+        { provide: CategoriesService, useValue: mockCategoriesService },
+        { provide: FlowsService, useValue: mockFlowsService },
+        { provide: TasksService, useValue: mockTasksService },
+        { provide: EmployeesService, useValue: mockEmployeesService },
       ],
     }).compile();
 
@@ -51,7 +49,7 @@ describe('ProductsService - Cobertura Optimizada', () => {
   // ==========================================
   // CP01: findAll
   // ==========================================
-  it('findAll: debe retornar lista y cubrir el mapeo de datos', async () => {
+  it('findAll: retorna lista correctamente', async () => {
     // Arrange
     const mockData = [{ id_product: 1, name: 'Sofa' }];
     mockRepo.find.mockResolvedValue(mockData);
@@ -60,38 +58,100 @@ describe('ProductsService - Cobertura Optimizada', () => {
     const result = await service.findAll();
 
     // Assert
-    expect(result).toEqual(mockData);
+    expect(result).toHaveLength(1);
+    expect(result[0].id_product).toBe(1);
+    expect(result[0].name).toBe('Sofa');
     expect(mockRepo.find).toHaveBeenCalled();
   });
 
-  // ==========================================
-  // CP03: createProduct (Lógica de Bucle y Asignación)
-  // ==========================================
-  it('createProduct: ERROR - lanza BadRequest si la categoría no tiene flujos', async () => {
+  it('findAll: lanza error si no hay productos', async () => {
     // Arrange
-    mockOrdersService.findById.mockResolvedValue({ id_order: 1 });
-    mockCategoriesService.findById.mockResolvedValue({ id_category: 1 });
-    mockRepo.save.mockResolvedValue({ id_product: 10, id_category: 1 });
-    mockFlowsService.findByCategoryOrderBySequence.mockResolvedValue([]); 
+    mockRepo.find.mockResolvedValue([]);
 
     // Act & Assert
-    await expect(service.createProduct({ id_order: 1, id_category: 1 } as any))
-      .rejects.toThrow(BadRequestException);
+    await expect(service.findAll()).rejects.toThrow(NotFoundException);
   });
 
-  it('createProduct: ÉXITO - cubre el bucle de flujos y creación de tareas', async () => {
+  // ==========================================
+  // CP02: findById
+  // ==========================================
+  it('findById: error si no existe', async () => {
     // Arrange
-    const productDto = { id_order: 1, id_category: 1, name: 'Sofa Test' };
+    mockRepo.findOne.mockResolvedValue(undefined);
+
+    // Act & Assert
+    await expect(service.findById(1)).rejects.toThrow(NotFoundException);
+  });
+
+  it('findById: retorna producto', async () => {
+    // Arrange
+    const mockProduct = { id_product: 1, name: 'Mesa' };
+    mockRepo.findOne.mockResolvedValue(mockProduct);
+
+    // Act
+    const result = await service.findById(1);
+
+    // Assert
+    expect(result).toBeDefined();
+    expect(result.id_product).toBe(1);
+    expect(mockRepo.findOne).toHaveBeenCalledWith({
+      where: { id_product: 1 },
+      relations: ['order', 'category', 'state'],
+    });
+  });
+
+  // ==========================================
+  // CP03: createProduct
+  // ==========================================
+  it('createProduct: error si orden no existe', async () => {
+    // Arrange
+    mockOrdersService.findById.mockRejectedValue(new NotFoundException());
+
+    // Act & Assert
+    await expect(
+      service.createProduct({ id_order: 999, id_category: 1 } as any)
+    ).rejects.toThrow(NotFoundException);
+  });
+
+  it('createProduct: error si categoría no existe', async () => {
+    // Arrange
+    mockOrdersService.findById.mockResolvedValue({ id_order: 1 });
+    mockCategoriesService.findById.mockRejectedValue(new NotFoundException());
+
+    // Act & Assert
+    await expect(
+      service.createProduct({ id_order: 1, id_category: 999 } as any)
+    ).rejects.toThrow(NotFoundException);
+  });
+
+  it('createProduct: error si no hay flujos', async () => {
+    // Arrange
     mockOrdersService.findById.mockResolvedValue({ id_order: 1 });
     mockCategoriesService.findById.mockResolvedValue({ id_category: 1 });
+    mockRepo.save.mockResolvedValue({ id_product: 10 });
+    mockFlowsService.findByCategoryOrderBySequence.mockResolvedValue([]);
+
+    // Act & Assert
+    await expect(
+      service.createProduct({ id_order: 1, id_category: 1 } as any)
+    ).rejects.toThrow(BadRequestException);
+  });
+
+  it('createProduct: crea tareas y asigna empleados', async () => {
+    // Arrange
+    const productDto = { id_order: 1, id_category: 1, name: 'Sofa Test' };
+
+    mockOrdersService.findById.mockResolvedValue({ id_order: 1 });
+    mockCategoriesService.findById.mockResolvedValue({ id_category: 1 });
+
     mockRepo.save.mockResolvedValue({ id_product: 10, ...productDto });
     mockRepo.findOne.mockResolvedValue({ id_product: 10, ...productDto });
-    
-    // Simulamos 2 pasos de flujo para cubrir el bucle for/map
+
     mockFlowsService.findByCategoryOrderBySequence.mockResolvedValue([
       { id_role: 1, sequence: 1, role: { id_area: 1 } },
-      { id_role: 2, sequence: 2, role: { id_area: 2 } }
+      { id_role: 2, sequence: 2, role: { id_area: 2 } },
     ]);
+
     mockEmployeesService.findEmployeeWithLeastWorkload.mockResolvedValue({ id_employee: 5 });
     mockTasksService.createTask.mockResolvedValue({ id_task: 100 });
 
@@ -101,22 +161,33 @@ describe('ProductsService - Cobertura Optimizada', () => {
     // Assert
     expect(result).toBeDefined();
     expect(mockTasksService.createTask).toHaveBeenCalledTimes(2);
-    expect(mockTasksService.assignEmployee).toHaveBeenCalled();
+    expect(mockTasksService.assignEmployee).toHaveBeenCalledTimes(2);
   });
 
   // ==========================================
-  // CP04: updateProduct (Restricción de Producción RF16)
+  // CP04: updateProduct
   // ==========================================
-  it('updateProduct: ERROR - lanza BadRequest si ya está en producción', async () => {
+  it('updateProduct: error si no existe', async () => {
     // Arrange
-    mockRepo.preload.mockResolvedValue({ id_product: 1, id_state: 2 }); // Estado 2 = En producción
+    mockRepo.preload.mockResolvedValue(undefined);
 
     // Act & Assert
-    await expect(service.updateProduct(1, { name: 'Edit' } as any))
-      .rejects.toThrow(BadRequestException);
+    await expect(
+      service.updateProduct(1, { name: 'Test' } as any)
+    ).rejects.toThrow(NotFoundException);
   });
 
-  it('updateProduct: ÉXITO - permite actualizar si está en estado 1', async () => {
+  it('updateProduct: error si está en producción', async () => {
+    // Arrange
+    mockRepo.preload.mockResolvedValue({ id_product: 1, id_state: 2 });
+
+    // Act & Assert
+    await expect(
+      service.updateProduct(1, { name: 'Edit' } as any)
+    ).rejects.toThrow(BadRequestException);
+  });
+
+  it('updateProduct: actualiza correctamente', async () => {
     // Arrange
     const updatedProduct = { id_product: 1, id_state: 1, name: 'Actualizado' };
     mockRepo.preload.mockResolvedValue(updatedProduct);

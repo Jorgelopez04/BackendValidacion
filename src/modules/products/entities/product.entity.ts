@@ -1,50 +1,46 @@
-import {Entity,PrimaryGeneratedColumn,Column,ManyToOne,JoinColumn,OneToMany} from 'typeorm';
-import { Order } from 'src/modules/orders/entities/order.entity';
 import { Category } from 'src/modules/categories/entities/category.entity';
-import { State } from 'src/common/entities/state.entity';
+import { Order } from 'src/modules/orders/entities/order.entity';
 import { Task } from 'src/modules/tasks/entities/task.entity';
+import { State } from 'src/common/entities/state.entity';
+import { Column, Entity, JoinColumn, ManyToMany, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity('products')
 export class Product {
-  @PrimaryGeneratedColumn({ name: 'id_product', type: 'integer' })
-  id_product: number;
+  @PrimaryGeneratedColumn({ name: 'id_product' })
+  id_product!: number;
 
-  @Column({ name: 'id_order', type: 'integer', nullable: false })
-  id_order: number;
+  @Column({ name: 'id_category' })
+  id_category!: number;
 
-  @Column({ name: 'id_category', type: 'integer', nullable: false })
-  id_category: number;
+  @Column({ name: 'id_state', default: 1 })
+  id_state!: number;
 
-  @Column({ name: 'id_state', type: 'integer', nullable: false, default: 1 })
-  id_state: number;
+  @Column({ name: 'id_order', nullable: true }) // ✅ ARREGLA EL ERROR TS2339
+  id_order?: number;
 
-  @Column({ name: 'name', type: 'varchar', length: 100, nullable: false })
-  name: string;
+  @Column({ unique: true })
+  name!: string;
 
-  @Column({ name: 'ref_photo', type: 'varchar', length: 255, nullable: true })
-  ref_photo?: string;
-
-  @Column({ name: 'dimensions', type: 'varchar', length: 100, nullable: true })
-  dimensions?: string;
-
-  @Column({ name: 'fabric', type: 'varchar', length: 100, nullable: true })
-  fabric?: string;
-
-  @Column({ name: 'description', type: 'varchar', length: 300, nullable: true })
+  @Column({ nullable: true })
   description?: string;
 
-  @ManyToOne(() => Order, (order) => order.products, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'id_order' })
-  order: Order;
+  @Column({ nullable: true })
+  ref_photo?: string;
 
-  @ManyToOne(() => Category, (category) => category.products, { onDelete: 'SET NULL' })
+  @Column({ nullable: true })
+  fabric?: string;
+
+  @ManyToOne(() => Category, (category) => category.products)
   @JoinColumn({ name: 'id_category' })
-  category: Category;
+  category!: Category;
 
-  @ManyToOne(() => State, (state) => state.products, { onDelete: 'SET NULL' })
+  @ManyToOne(() => State)
   @JoinColumn({ name: 'id_state' })
-  state: State;
+  state!: State;
+
+  @ManyToMany(() => Order, (order) => order.products)
+  orders!: Order[]; // ✅ INICIALIZADO
 
   @OneToMany(() => Task, (task) => task.product)
-  tasks: Task[];
+  tasks!: Task[]; // ✅ INICIALIZADO
 }

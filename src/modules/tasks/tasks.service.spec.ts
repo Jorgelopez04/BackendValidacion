@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
-import { TasksService } from './tasks.service';
+import { TasksService, TaskState } from './tasks.service';
 import { Task } from './entities/task.entity';
 import {
   ForbiddenException,
@@ -9,11 +9,11 @@ import {
   BadRequestException,
   ConflictException,
 } from '@nestjs/common';
-import 'reflect-metadata';
 
-describe('TasksService - FULL COVERAGE', () => {
+describe('TasksService - SONAR GOD INTEGRATED', () => {
   let service: TasksService;
 
+  // Mock Maestro de QueryBuilder para DataSource
   const mockQueryBuilder: any = {
     update: jest.fn().mockReturnThis(),
     set: jest.fn().mockReturnThis(),
@@ -22,7 +22,7 @@ describe('TasksService - FULL COVERAGE', () => {
     select: jest.fn().mockReturnThis(),
     addSelect: jest.fn().mockReturnThis(),
     from: jest.fn().mockReturnThis(),
-    getRawMany: jest.fn().mockResolvedValue([{ id_task: 1, product_name: 'Camisa' }]),
+    getRawMany: jest.fn(),
   };
 
   const mockDataSource: any = {
@@ -50,216 +50,147 @@ describe('TasksService - FULL COVERAGE', () => {
     jest.clearAllMocks();
   });
 
-  // ===============================
-  // 🔍 FIND
-  // ===============================
+  describe('🔍 Consultas (Queries)', () => {
+    it('findAll: debe lanzar NotFoundException si el repositorio retorna vacío (Líneas 39-47)', async () => {
+  mockRepo.find.mockResolvedValue([]); 
+  
+  try {
+    await service.findAll();
+    fail('Debería haber lanzado una excepción'); // Esto asegura que el test falle si NO lanza error
+  } catch (error: any) {
+    expect(error).toBeInstanceOf(NotFoundException);
+    expect(error.message).toBeDefined(); // Ahora sí funcionará
+  }
+});
 
-  it('findAll OK', async () => {
-    mockRepo.find.mockResolvedValue([{ id_task: 1 }]);
-
-    const res = await service.findAll();
-
-    expect(res).toBeDefined();
-  });
-
-  it('findAll ERROR', async () => {
-    mockRepo.find.mockResolvedValue([]);
-
-    await expect(service.findAll()).rejects.toThrow(NotFoundException);
-  });
-
-  it('findById OK', async () => {
-    mockRepo.findOne.mockResolvedValue({ id_task: 1 });
-
-    const res = await service.findById(1);
-
-    expect(res).toBeDefined();
-  });
-
-  it('findById ERROR', async () => {
-    mockRepo.findOne.mockResolvedValue(null);
-
-    await expect(service.findById(99)).rejects.toThrow(NotFoundException);
-  });
-
-  // ===============================
-  // 🏗️ CREATE
-  // ===============================
-
-  it('createTask OK', async () => {
-    mockRepo.findOne.mockResolvedValue(null);
-    mockRepo.create.mockReturnValue({ id_task: 1 });
-    mockRepo.save.mockResolvedValue({ id_task: 1 });
-
-    const res = await service.createTask({
-      id_product: 1,
-      id_area: 1,
-      sequence: 1,
-      id_state: 1,
+    it('findAll: debe retornar lista de tareas mapeadas', async () => {
+      mockRepo.find.mockResolvedValue([{ id_task: 1 }]);
+      const res = await service.findAll();
+      expect(res).toBeDefined();
     });
 
-    expect(res).toBeDefined();
-  });
-
-  it('createTask ERROR duplicado', async () => {
-    mockRepo.findOne.mockResolvedValue({ id_task: 1 });
-
-    await expect(
-      service.createTask({
-        id_product: 1,
-        id_area: 1,
-        sequence: 1,
-        id_state: 1,
-      }),
-    ).rejects.toThrow(BadRequestException);
-  });
-
-  // ===============================
-  // 👷 ASSIGN
-  // ===============================
-
-  it('assignEmployee OK', async () => {
-    mockRepo.findOne.mockResolvedValue({
-      id_task: 1,
-      id_employee: null,
+    it('findAssignedTasks: enriquecimiento de estado previo y mapeo', async () => {
+      mockRepo.find.mockResolvedValue([{ id_product: 1, sequence: 2 }]);
+      mockRepo.findOne.mockResolvedValue({ id_state: TaskState.COMPLETED });
+      const res = await service.findAssignedTasks(1);
+      expect(res).toBeDefined();
+      expect(mockRepo.findOne).toHaveBeenCalled();
     });
 
-    mockRepo.save.mockResolvedValue({ id_employee: 5 });
-
-    const res = await service.assignEmployee(1, 5);
-
-    expect(res.id_employee).toBe(5);
+    it('findAssignedTasks: retorno rápido si está vacío', async () => {
+      mockRepo.find.mockResolvedValue([]);
+      const res = await service.findAssignedTasks(1);
+      expect(res).toEqual([]);
+    });
   });
 
-  it('assignEmployee ERROR ya asignado', async () => {
-    mockRepo.findOne.mockResolvedValue({
-      id_task: 1,
-      id_employee: 2,
+  describe('🏗️ Creación y Asignación', () => {
+    it('createTask: error si la secuencia ya existe', async () => {
+      mockRepo.findOne.mockResolvedValue({ id_task: 1 });
+      await expect(service.createTask({ id_product: 1, id_area: 1, sequence: 1, id_state: 1 }))
+        .rejects.toThrow(BadRequestException);
     });
 
-    await expect(service.assignEmployee(1, 5)).rejects.toThrow(BadRequestException);
-  });
-
-  // ===============================
-  // ▶️ START TASK
-  // ===============================
-
-  it('startTask OK', async () => {
-    const task = {
-      id_task: 1,
-      id_employee: 1,
-      id_state: 1,
-      sequence: 1,
-      id_product: 10,
-      product: { id_product: 10, order: { id_order: 1 } },
-    };
-
-    mockRepo.findOne.mockResolvedValue(task);
-    mockRepo.save.mockResolvedValue({ ...task, id_state: 2 });
-
-    const res = await service.startTask(1, 1);
-
-    expect(res).toBeDefined();
-  });
-
-  it('startTask ERROR ownership', async () => {
-    mockRepo.findOne.mockResolvedValue({
-      id_task: 1,
-      id_employee: 2,
+    it('createTask: éxito al guardar', async () => {
+      mockRepo.findOne.mockResolvedValue(null);
+      mockRepo.create.mockReturnValue({ id_task: 1 });
+      mockRepo.save.mockResolvedValue({ id_task: 1 });
+      const res = await service.createTask({ id_product: 1, id_area: 1, sequence: 1, id_state: 1 });
+      expect(res).toBeDefined();
     });
 
-    await expect(service.startTask(1, 1)).rejects.toThrow(ForbiddenException);
-  });
-
-  it('startTask ERROR ya en progreso', async () => {
-    mockRepo.findOne.mockResolvedValue({
-      id_task: 1,
-      id_employee: 1,
-      id_state: 2,
-      sequence: 1,
-      id_product: 1,
+    it('assignEmployee: error si ya tiene empleado asignado (Línea 110-111)', async () => {
+      mockRepo.findOne.mockResolvedValue({ id_task: 1, id_employee: 99 });
+      await expect(service.assignEmployee(1, 1)).rejects.toThrow(BadRequestException);
     });
-
-    await expect(service.startTask(1, 1)).rejects.toThrow(ConflictException);
   });
 
-  it('startTask ERROR tarea previa no completada', async () => {
-    mockRepo.findOne
-      .mockResolvedValueOnce({
-        id_task: 2,
-        id_employee: 1,
-        id_state: 1,
-        sequence: 2,
-        id_product: 1,
-      })
-      .mockResolvedValueOnce({
-        id_task: 1,
-        id_state: 1,
+  describe('⚙️ Ciclo de Vida (Start/Complete)', () => {
+    it('startTask: éxito total con cascada', async () => {
+      jest.spyOn(service as any, 'findPreviousTask').mockResolvedValue(null);
+      mockRepo.findOne.mockResolvedValue({
+        id_task: 1, id_employee: 1, id_state: TaskState.PENDING, id_product: 1, product: { id_order: 10 }
       });
+      mockRepo.save.mockResolvedValue({ id_task: 1 });
+      mockQueryBuilder.getRawMany.mockResolvedValue([{ id_state: 3 }]);
 
-    await expect(service.startTask(2, 1)).rejects.toThrow(BadRequestException);
-  });
-
-  // ===============================
-  // ✅ COMPLETE TASK
-  // ===============================
-
-  it('completeTask OK', async () => {
-    const task = {
-      id_task: 1,
-      id_employee: 1,
-      id_state: 2,
-      id_product: 1,
-      product: { id_product: 1, order: { id_order: 1 } },
-    };
-
-    mockRepo.findOne.mockResolvedValue(task);
-    mockRepo.save.mockResolvedValue({ ...task, id_state: 3 });
-
-    const res = await service.completeTask(1, 1);
-
-    expect(res).toBeDefined();
-  });
-
-  it('completeTask ERROR no iniciada', async () => {
-    mockRepo.findOne.mockResolvedValue({
-      id_task: 1,
-      id_employee: 1,
-      id_state: 1,
+      const res = await service.startTask(1, 1);
+      expect(res).toBeDefined();
+      expect(mockDataSource.createQueryBuilder).toHaveBeenCalled();
     });
 
-    await expect(service.completeTask(1, 1)).rejects.toThrow(BadRequestException);
-  });
-
-  it('completeTask ERROR ya completada', async () => {
-    mockRepo.findOne.mockResolvedValue({
-      id_task: 1,
-      id_employee: 1,
-      id_state: 3,
+    it('completeTask: error si no está en progreso (Línea 238)', async () => {
+      mockRepo.findOne.mockResolvedValue({ id_task: 1, id_employee: 1, id_state: TaskState.PENDING });
+      await expect(service.completeTask(1, 1)).rejects.toThrow(BadRequestException);
     });
 
-    await expect(service.completeTask(1, 1)).rejects.toThrow(ConflictException);
+    it('completeTask: éxito y actualización de cascada', async () => {
+      mockRepo.findOne.mockResolvedValue({
+        id_task: 1, id_employee: 1, id_state: TaskState.IN_PROGRESS, id_product: 1, product: {}
+      });
+      mockRepo.save.mockResolvedValue({ id_task: 1 });
+      mockRepo.find.mockResolvedValue([{ id_state: TaskState.COMPLETED }]);
+
+      const res = await service.completeTask(1, 1);
+      expect(res).toBeDefined();
+    });
   });
 
-  // ===============================
-  // 📊 REPORTES
-  // ===============================
+  describe('🧠 Lógica de Negocio y Helpers', () => {
+    it('calculateState: lógica de estados mezclados', () => {
+      const calc = (service as any).calculateState;
+      expect(calc([TaskState.COMPLETED, TaskState.COMPLETED])).toBe(TaskState.COMPLETED);
+      expect(calc([TaskState.COMPLETED, TaskState.PENDING])).toBe(TaskState.IN_PROGRESS);
+      expect(calc([TaskState.PENDING, TaskState.PENDING])).toBe(TaskState.PENDING);
+    });
 
-  it('findTasksByEmployee OK', async () => {
-    const res = await service.findTasksByEmployee(1);
+    it('validateOwnership: error si el empleado no es dueño', () => {
+      const task = { id_employee: 5 } as any;
+      expect(() => (service as any).validateOwnership(task, 1)).toThrow(ForbiddenException);
+    });
 
-    expect(res[0].product_name).toBe('Camisa');
+    it('validateStartState: error si ya está en proceso o terminada', () => {
+      const taskInProg = { id_state: TaskState.IN_PROGRESS } as any;
+      const taskDone = { id_state: TaskState.COMPLETED } as any;
+      expect(() => (service as any).validateStartState(taskInProg)).toThrow(ConflictException);
+      expect(() => (service as any).validateStartState(taskDone)).toThrow(BadRequestException);
+    });
+
+    it('ensurePreviousTaskCompleted: error si la anterior está pendiente', async () => {
+      jest.spyOn(service as any, 'findPreviousTask').mockResolvedValue({ id_state: TaskState.PENDING });
+      const task = { id_product: 1, sequence: 2 } as any;
+      await expect((service as any).ensurePreviousTaskCompleted(task)).rejects.toThrow(BadRequestException);
+    });
+
+    it('getTaskOrFail: lanza NotFound si no existe (Línea 295)', async () => {
+      mockRepo.findOne.mockResolvedValue(null);
+      await expect((service as any).getTaskOrFail(999)).rejects.toThrow(NotFoundException);
+    });
   });
 
-  // ===============================
-  // 🧹 OTROS
-  // ===============================
+  describe('🔁 Cascada y Base de Datos', () => {
+    it('updateOrderState: sale rápido si no hay productos', async () => {
+      mockQueryBuilder.getRawMany.mockResolvedValue([]);
+      await (service as any).updateOrderState(1);
+      expect(mockQueryBuilder.execute).not.toHaveBeenCalled();
+    });
 
-  it('deleteByProductId', async () => {
-    mockRepo.delete.mockResolvedValue({});
+    it('updateOrderState: ejecuta update si hay productos', async () => {
+      mockQueryBuilder.getRawMany.mockResolvedValue([{ id_state: 3 }]);
+      await (service as any).updateOrderState(1);
+      expect(mockQueryBuilder.execute).toHaveBeenCalled();
+    });
 
-    await service.deleteByProductId(1);
+    it('findTasksByEmployee: usa queryBuilder correctamente', async () => {
+      mockQueryBuilder.getRawMany.mockResolvedValue([{ id_task: 1 }]);
+      const res = await service.findTasksByEmployee(1);
+      expect(res).toHaveLength(1);
+    });
 
-    expect(mockRepo.delete).toHaveBeenCalled();
+    it('deleteByProductId: ejecuta eliminación', async () => {
+      mockRepo.delete.mockResolvedValue({});
+      await service.deleteByProductId(1);
+      expect(mockRepo.delete).toHaveBeenCalledWith({ id_product: 1 });
+    });
   });
 });

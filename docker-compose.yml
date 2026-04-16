@@ -1,0 +1,11 @@
+services:
+  api:
+    build: .
+    container_name: tailorflow-api
+    # Esta línea es la clave: usa la red directa de tu PC
+    network_mode: "host" 
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=production
+    restart: always

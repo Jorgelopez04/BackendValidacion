@@ -3,7 +3,6 @@ import { Order } from '../../modules/orders/entities/order.entity';
 import { Product } from '../../modules/products/entities/product.entity';
 import { Task } from '../../modules/tasks/entities/task.entity';
 
-// Definición del Enum para los nombres de estado
 export enum StateName {
     PENDIENTE = 'PENDIENTE',
     EN_PROCESO = 'EN PROCESO',
@@ -13,9 +12,8 @@ export enum StateName {
 
 @Entity('estados')
 export class State {
-
     @PrimaryGeneratedColumn({ name: 'id_state', type: 'int' })
-    id_state: number;
+    id_state!: number;
 
     @Column({ 
         name: 'nombre', 
@@ -24,15 +22,16 @@ export class State {
         unique: true, 
         nullable: false 
     })
-    nombre: StateName;
+    nombre!: StateName;
 
-    // Relaciones
     @OneToMany(() => Order, (order) => order.state)
-    orders: Order[];
+    orders!: Order[];
 
     @OneToMany(() => Product, (product) => product.state)
-    products: Product[];
+    products!: Product[];
 
     @OneToMany(() => Task, (task) => task.state)
-    tasks: Task[];
+    tasks!: Task[];
+
+    // ✅ Corregido: Constructor eliminado
 }
