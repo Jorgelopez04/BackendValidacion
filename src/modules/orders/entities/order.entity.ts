@@ -34,5 +34,5 @@ export class Order {
     joinColumn: { name: 'id_order', referencedColumnName: 'id_order' },
     inverseJoinColumn: { name: 'id_product', referencedColumnName: 'id_product' }
   })
-  products!: Product[]; // ✅ Corregido: Sin inicialización manual
+  products: Product[] = []; // ✅ Corregido: Sin inicialización manual
 }

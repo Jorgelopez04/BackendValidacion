@@ -32,5 +32,5 @@ export class Employee {
   role!: Role;
 
   @OneToMany(() => Task, (task) => task.employee)
-  tasks!: Task[] ; // 👈 CAMBIO CLAVE: Cambia !: por = [];
+  tasks: Task[] = []; // 👈 CAMBIO CLAVE: Cambia !: por = [];
 }

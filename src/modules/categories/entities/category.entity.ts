@@ -15,8 +15,8 @@ export class Category {
 
   // El "!" le dice a TypeScript: "Tranquilo, TypeORM se encargará de esto"
   @OneToMany(() => Flow, (flow) => flow.category)
-  flows!: Flow[]; 
+  flows: Flow[]= []; // ✅ INICIALIZADO
 
   @OneToMany(() => Product, (product) => product.category)
-  products!: Product[]; 
+  products: Product[] = []; 
 }

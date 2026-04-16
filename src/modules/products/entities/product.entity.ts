@@ -42,5 +42,5 @@ export class Product {
   orders!: Order[]; // ✅ INICIALIZADO
 
   @OneToMany(() => Task, (task) => task.product)
-  tasks!: Task[]; // ✅ INICIALIZADO
+  tasks: Task[] = []; // ✅ INICIALIZADO
 }

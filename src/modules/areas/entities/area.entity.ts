@@ -11,10 +11,9 @@ export class Area {
   name!: string;
 
   @OneToMany(() => Role, (role) => role.area)
-  roles!: Role[]; 
+  roles: Role[]= []; // ✅ INICIALIZADO
 
   @OneToMany(() => Task, (task) => task.area)
-  tasks!: Task[];
+  tasks: Task[] = [];
 
- 
 }

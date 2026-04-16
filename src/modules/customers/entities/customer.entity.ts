@@ -16,5 +16,5 @@ export class Customer {
   phone!: string;
 
   @OneToMany(() => Order, (order) => order.customer)
-  orders!: Order[]; // ✅ Corregido: Sin = []
+  orders: Order[] = []; // ✅ Corregido: Sin = []
 }
