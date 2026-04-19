@@ -18,11 +18,11 @@
     "forceConsistentCasingInFileNames": true,
     "noFallthroughCasesInSwitch": false,
     "esModuleInterop": true,
-    "types": ["jest", "node"],
+    "types": ["jest", "node", "chai", "sinon"],
     "paths": {
       "src/*": ["src/*"]
     }
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "testing/**/*"],
   "exclude": ["node_modules", "dist", "test"]
 }
