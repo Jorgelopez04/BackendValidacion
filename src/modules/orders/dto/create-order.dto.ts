@@ -5,7 +5,7 @@ export class CreateOrderDto {
 
   @IsInt({ message: 'El campo id_customer debe ser un número entero.' })
   @IsPositive({ message: 'El campo id_customer debe ser un número positivo.' })
-  id_customer: number;
+  id_customer!: number; // Agregado el '!' para eliminar el error de la imagen
 
   @IsOptional()
   @Type(() => Date)

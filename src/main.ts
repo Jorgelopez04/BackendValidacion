@@ -8,6 +8,8 @@ async function bootstrap() {
   // Esto es opcional pero recomendado para que funcionen tus DTOs
   app.useGlobalPipes(new ValidationPipe());
 
+  app.enableCors();
+
   // El puerto que configuraste en el Dockerfile
   await app.listen(process.env.PORT ?? 3000);
 }

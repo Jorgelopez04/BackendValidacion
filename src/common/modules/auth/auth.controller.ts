@@ -4,12 +4,12 @@ import { LoginDto } from './dto/loginDto';
 import { BaseApplicationResponseDto } from 'src/common/dto/base-application-response.dto';
 import { LoginResponseDto } from './dto/login-response.dto';
 
-@Controller('autenticación')
+@Controller('auth')
 export class AuthController {
     // Se añade 'readonly' para cumplir con la regla de mantenibilidad de SonarQube
     constructor(private readonly authService: AuthService) {}
 
-    @Post('acceso')
+    @Post('login')
     async login(@Body() usuario: LoginDto): Promise<BaseApplicationResponseDto<LoginResponseDto>> {
         const authorizedEmployee = await this.authService.login(usuario);
         

@@ -22,10 +22,10 @@ export class Role {
   area!: Area;
 
   @OneToMany(() => Employee, (employee) => employee.role)
-  employees: Employee[] = [];
+  employees!: Employee[] ;
 
   @OneToMany(() => Flow, (flow) => flow.role)
-  flows: Flow[]= []; // ✅ INICIALIZADO
+  flows!: Flow[]; // ✅ INICIALIZADO
 
   // ❌ ELIMINA EL CONSTRUCTOR: Esto detona el error en Docker
 }

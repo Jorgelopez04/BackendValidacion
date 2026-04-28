@@ -1,10 +1,11 @@
 import { State } from "src/common/entities/state.entity";
 import { Customer } from "src/modules/customers/entities/customer.entity";
 import { Product } from "src/modules/products/entities/product.entity";
-import { Column, CreateDateColumn, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity('orders')
 export class Order {
+
   @PrimaryGeneratedColumn({ name: 'id_order' })
   id_order!: number;
 
@@ -28,11 +29,7 @@ export class Order {
   @JoinColumn({ name: 'id_customer' })
   customer!: Customer;
 
-  @ManyToMany(() => Product, (product) => product.orders)
-  @JoinTable({
-    name: 'order_products',
-    joinColumn: { name: 'id_order', referencedColumnName: 'id_order' },
-    inverseJoinColumn: { name: 'id_product', referencedColumnName: 'id_product' }
-  })
-  products: Product[] = []; // ✅ Corregido: Sin inicialización manual
+  // ✅ RELACIÓN CORRECTA
+  @OneToMany(() => Product, (product) => product.order)
+  products!: Product[];
 }

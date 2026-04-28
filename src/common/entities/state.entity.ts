@@ -10,13 +10,13 @@ export enum StateName {
     DEMORADO = 'DEMORADO',
 }
 
-@Entity('estados')
+@Entity('states')
 export class State {
     @PrimaryGeneratedColumn({ name: 'id_state', type: 'int' })
     id_state!: number;
 
     @Column({ 
-        name: 'nombre', 
+        name: 'name', 
         type: 'varchar', 
         length: 20, 
         unique: true, 
@@ -25,13 +25,13 @@ export class State {
     nombre!: StateName;
 
     @OneToMany(() => Order, (order) => order.state)
-    orders: Order[] = []; // ✅ Corregido: Sin inicialización manual
+    orders!: Order[] ; // ✅ Corregido: Sin inicialización manual
 
     @OneToMany(() => Product, (product) => product.state)
-    products: Product[]= []; // ✅ Corregido: Sin inicialización manual
+    products!: Product[]; // ✅ Corregido: Sin inicialización manual
 
     @OneToMany(() => Task, (task) => task.state)
-    tasks: Task[] = []; // ✅ Corregido: Sin inicialización manual
+    tasks!: Task[]; // ✅ Corregido: Sin inicialización manual
 
     // ✅ Corregido: Constructor eliminado
 }
