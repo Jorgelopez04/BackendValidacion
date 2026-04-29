@@ -29,7 +29,11 @@ export class Order {
   @JoinColumn({ name: 'id_customer' })
   customer!: Customer;
 
-  // ✅ RELACIÓN CORRECTA
   @OneToMany(() => Product, (product) => product.order)
   products!: Product[];
+
+  // 🔥 CLAVE PARA PASAR LOS TESTS
+  constructor() {
+    this.products = [];
+  }
 }

@@ -6,7 +6,7 @@ import {
   JoinColumn,
   PrimaryGeneratedColumn,
   Unique,
-  ManyToOne, // 👈 Importante añadir este
+  ManyToOne,
 } from "typeorm";
 
 @Entity('flows')
@@ -25,13 +25,11 @@ export class Flow {
   @Column({ name: 'sequence', type: 'integer' })
   sequence!: number;
 
-  // ✅ Añadido @ManyToOne para que funcione la relación con Role
   @ManyToOne(() => Role, (role) => role.flows)
   @JoinColumn({ name: 'id_role' })
-  role!: Role;
+  role!: Role; // 🔥 CAMBIO CLAVE
 
-  // ✅ Añadido @ManyToOne para que funcione la relación con Category
   @ManyToOne(() => Category, (category) => category.flows)
   @JoinColumn({ name: 'id_category' })
-  category!: Category;
+  category!: Category; // opcional pero recomendado
 }

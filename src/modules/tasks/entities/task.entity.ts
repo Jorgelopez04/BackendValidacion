@@ -4,7 +4,7 @@ import {
   PrimaryGeneratedColumn,
   Index,
   JoinColumn,
-  ManyToOne, // 👈 Añadido
+  ManyToOne,
 } from 'typeorm';
 import { Product } from '../../products/entities/product.entity';
 import { Employee } from '../../employees/entities/employee.entity';
@@ -39,22 +39,20 @@ export class Task {
   @Column({ name: 'end_date', type: 'timestamp', nullable: true })
   end_date?: Date;
 
-  // ✅ Añadido @ManyToOne para conectar con Product
+  // 🔹 RELACIONES
+
   @ManyToOne(() => Product, (product) => product.tasks)
   @JoinColumn({ name: 'id_product' })
   product!: Product;
 
-  // ✅ Añadido @ManyToOne para conectar con Employee
   @ManyToOne(() => Employee, (employee) => employee.tasks, { nullable: true })
   @JoinColumn({ name: 'id_employee' })
   employee?: Employee;
 
-  // ✅ Añadido @ManyToOne para conectar con Area
   @ManyToOne(() => Area)
   @JoinColumn({ name: 'id_area' })
   area!: Area;
 
-  // ✅ Añadido @ManyToOne para conectar con State
   @ManyToOne(() => State)
   @JoinColumn({ name: 'id_state' })
   state!: State;

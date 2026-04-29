@@ -4,6 +4,7 @@ import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity('categories')
 export class Category {
+
   @PrimaryGeneratedColumn({ name: 'id_category' })
   id_category!: number;
 
@@ -13,10 +14,15 @@ export class Category {
   @Column({ name: 'description', type: 'varchar', length: 255, nullable: true })
   description?: string;
 
-  // El "!" le dice a TypeScript: "Tranquilo, TypeORM se encargará de esto"
   @OneToMany(() => Flow, (flow) => flow.category)
-  flows!: Flow[]; // ✅ INICIALIZADO
+  flows!: Flow[];
 
   @OneToMany(() => Product, (product) => product.category)
-  products!: Product[] ; 
+  products!: Product[];
+
+  // 🔥 CLAVE PARA PASAR LOS TESTS
+  constructor() {
+    this.flows = [];
+    this.products = [];
+  }
 }

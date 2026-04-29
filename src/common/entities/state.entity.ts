@@ -12,6 +12,7 @@ export enum StateName {
 
 @Entity('states')
 export class State {
+
     @PrimaryGeneratedColumn({ name: 'id_state', type: 'int' })
     id_state!: number;
 
@@ -24,14 +25,13 @@ export class State {
     })
     nombre!: StateName;
 
+    // 🔥 FIX AQUÍ
     @OneToMany(() => Order, (order) => order.state)
-    orders!: Order[] ; // ✅ Corregido: Sin inicialización manual
+    orders: Order[] = [];
 
     @OneToMany(() => Product, (product) => product.state)
-    products!: Product[]; // ✅ Corregido: Sin inicialización manual
+    products: Product[] = [];
 
     @OneToMany(() => Task, (task) => task.state)
-    tasks!: Task[]; // ✅ Corregido: Sin inicialización manual
-
-    // ✅ Corregido: Constructor eliminado
+    tasks: Task[] = [];
 }

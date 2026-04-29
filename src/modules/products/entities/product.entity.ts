@@ -2,7 +2,14 @@ import { Category } from 'src/modules/categories/entities/category.entity';
 import { Order } from 'src/modules/orders/entities/order.entity';
 import { Task } from 'src/modules/tasks/entities/task.entity';
 import { State } from 'src/common/entities/state.entity';
-import { Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
+import {
+  Column,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  OneToMany,
+  PrimaryGeneratedColumn
+} from "typeorm";
 
 @Entity('products')
 export class Product {
@@ -35,17 +42,16 @@ export class Product {
 
   @ManyToOne(() => Category, (category) => category.products)
   @JoinColumn({ name: 'id_category' })
-  category!: Category;
+  category?: Category; // 🔥 puede venir undefined
 
   @ManyToOne(() => State)
   @JoinColumn({ name: 'id_state' })
-  state!: State;
+  state?: State; // 🔥 mismo caso
 
-  // ✅ RELACIÓN CORRECTA CON ORDER
   @ManyToOne(() => Order, (order) => order.products, { nullable: true })
   @JoinColumn({ name: 'id_order' })
-  order!: Order;
+  order?: Order; // 🔥 FIX importante
 
   @OneToMany(() => Task, (task) => task.product)
-  tasks!: Task[];
+  tasks: Task[] = []; // 🔥 FIX crítico
 }

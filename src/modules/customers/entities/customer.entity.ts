@@ -3,18 +3,19 @@ import { Column, Entity, PrimaryGeneratedColumn, OneToMany } from "typeorm";
 
 @Entity('customers')
 export class Customer {
+
   @PrimaryGeneratedColumn({ name: 'id_customer', type: 'integer' })
   id_customer!: number;
 
-  @Column({ name: 'name', type: 'varchar', length: 100, unique: true, nullable: false })
+  @Column({ name: 'name', type: 'varchar', length: 100, unique: true })
   name!: string;
 
   @Column({ name: 'address', type: 'varchar', length: 100, nullable: true })
   address?: string;
 
-  @Column({ name: 'phone', type: 'varchar', length: 15, nullable: false })
+  @Column({ name: 'phone', type: 'varchar', length: 15 })
   phone!: string;
 
   @OneToMany(() => Order, (order) => order.customer)
-  orders!: Order[] ; // ✅ Corregido: Sin = []
+  orders: Order[] = []; // 🔥 FIX
 }

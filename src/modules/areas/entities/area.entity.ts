@@ -4,6 +4,7 @@ import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity('areas')
 export class Area {
+
   @PrimaryGeneratedColumn({ name: 'id_area' })
   id_area!: number;
 
@@ -11,9 +12,14 @@ export class Area {
   name!: string;
 
   @OneToMany(() => Role, (role) => role.area)
-  roles!: Role[]; // ✅ INICIALIZADO
+  roles!: Role[];
 
   @OneToMany(() => Task, (task) => task.area)
-  tasks!: Task[] ;
+  tasks!: Task[];
 
+  // 🔥 CLAVE PARA LOS TESTS
+  constructor() {
+    this.roles = [];
+    this.tasks = [];
+  }
 }
