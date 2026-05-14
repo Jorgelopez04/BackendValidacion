@@ -30,8 +30,8 @@ export class Role {
   area?: Area; // 🔥 FIX (puede no venir cargada)
 
   @OneToMany(() => Employee, (employee) => employee.role)
-  employees: Employee[] = []; // 🔥 FIX
+  employees!: Employee[] ; // 🔥 FIX
 
   @OneToMany(() => Flow, (flow) => flow.role)
-  flows: Flow[] = []; // 🔥 FIX
+  flows!: Flow[] ; // 🔥 FIX
 }

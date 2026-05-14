@@ -18,6 +18,9 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
+    "cypress:open": "cypress open",
+    "cypress:run": "cypress run",
+    "cypress:run:api": "cypress run --spec 'cypress/e2e/backend/*.cy.ts'",
     "sonar": "npx sonar-scanner -Dsonar.token=TU_TOKEN"
   },
   "dependencies": {
@@ -55,6 +58,7 @@
     "@types/sinon": "^21.0.1",
     "@types/supertest": "^6.0.2",
     "chai": "^6.2.2",
+    "cypress": "^15.15.0",
     "eslint": "^9.18.0",
     "eslint-config-prettier": "^10.0.1",
     "eslint-plugin-prettier": "^5.2.2",

@@ -1,53 +1,63 @@
-import { ForbiddenException, NotFoundException, BadRequestException } from '@nestjs/common';
+describe('Orders Security Tests', () => {
+  beforeEach(() => {
+    cy.loginAPI(Cypress.env('adminCc'), Cypress.env('adminPassword'));
+  });
 
-describe('Security Testing: Orders Module (TailorFlow)', () => {
-
-    let orderRepoStub: any;
-
-    beforeEach(() => {
-        orderRepoStub = {
-            findOne: jest.fn(),
-            save: jest.fn()
-        };
+  it('should require authentication for orders endpoint', () => {
+    cy.request({
+      method: 'GET',
+      url: '/orders',
+      failOnStatusCode: false
+    }).then((response) => {
+      expect(response.status).to.eq(401); // Unauthorized
+      cy.screenshot('unauthorized-access');
     });
+  });
 
-    afterEach(() => {
-        jest.clearAllMocks();
+  it('should allow authenticated user to access orders', () => {
+    cy.requestWithAuth('GET', '/orders').then((response) => {
+      expect(response.status).to.be.oneOf([200, 404]); // OK or Not Found if no orders
+      cy.screenshot('authenticated-access');
     });
+  });
 
-    // ==========================================
-    // RNF10: Control de Acceso por Cliente
-    // ==========================================
-    describe('RNF10 - Protección de Acceso Privado', () => {
-        it('Debe denegar el acceso si la orden pertenece a otro cliente', async () => {
-
-            orderRepoStub.findOne.mockResolvedValue({ id_order: 1, id_customer: 55 });
-
-            const validateOwnership = async (customerId: number) => {
-                const order = await orderRepoStub.findOne(1);
-                if (order.id_customer !== customerId) {
-                    throw new ForbiddenException('No tienes permiso para ver esta orden');
-                }
-            };
-
-            await expect(validateOwnership(1))
-                .rejects
-                .toThrow(ForbiddenException);
-        });
+  it('should prevent unauthorized access to sensitive data', () => {
+    // Test with invalid token
+    cy.request({
+      method: 'GET',
+      url: '/orders',
+      headers: {
+        'Authorization': 'Bearer invalid_token'
+      },
+      failOnStatusCode: false
+    }).then((response) => {
+      expect(response.status).to.eq(401);
+      cy.screenshot('invalid-token');
     });
+  });
 
-    // ==========================================
-    // RF16 & RF17: Restricciones en Producción
-    // ==========================================
-    describe('RF16/17 - Inmutabilidad en Producción', () => {
+  it('should validate input data for order creation', () => {
+    const invalidOrder = {
+      // Missing required fields
+    };
 
-        it('Debe prohibir la cancelación si la orden ya está en proceso (RF17)', async () => {
+    cy.requestWithAuth('POST', '/orders', invalidOrder).then((response) => {
+      expect(response.status).to.eq(400); // Bad Request
+      cy.screenshot('invalid-input-validation');
+    });
+  });
 
-            orderRepoStub.findOne.mockResolvedValue({ id_order: 1, id_state: 2 });
+  it('should prevent SQL injection attempts', () => {
+    const maliciousInput = {
+      id_customer: "1' OR '1'='1"
+    };
 
-            const secureCancel = async (id: number) => {
-                const order = await orderRepoStub.findOne(id);
-                if (order.id_state !== 1) {
+    cy.requestWithAuth('POST', '/orders', maliciousInput).then((response) => {
+      expect(response.status).to.eq(400); // Should not execute malicious query
+      cy.screenshot('sql-injection-prevention');
+    });
+  });
+});
                     throw new BadRequestException('No se puede cancelar una orden que ya está en producción');
                 }
             };

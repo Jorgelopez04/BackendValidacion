@@ -1,13 +1,34 @@
-import { ForbiddenException } from '@nestjs/common';
-import { TaskState } from '../src/modules/tasks/tasks.service';
-
-describe('Security Testing: Tasks Module (TailorFlow)', () => {
-
-  let taskRepoStub: any;
-
+describe('Tasks Security Tests', () => {
   beforeEach(() => {
-    taskRepoStub = {
-      findOne: jest.fn()
+    cy.loginAPI(Cypress.env('adminCc'), Cypress.env('adminPassword'));
+  });
+
+  it('should require authentication for tasks endpoint', () => {
+    cy.request({
+      method: 'GET',
+      url: '/tasks',
+      failOnStatusCode: false
+    }).then((response) => {
+      expect(response.status).to.eq(401);
+    });
+  });
+
+  it('should allow authenticated user to access tasks', () => {
+    cy.requestWithAuth('GET', '/tasks').then((response) => {
+      expect(response.status).to.be.oneOf([200, 404]);
+    });
+  });
+
+  it('should validate task creation input', () => {
+    const invalidTask = {
+      // Missing required fields
+    };
+
+    cy.requestWithAuth('POST', '/tasks', invalidTask).then((response) => {
+      expect(response.status).to.eq(400);
+    });
+  });
+});
     };
   });
 

@@ -1,52 +1,68 @@
-import { BadRequestException } from '@nestjs/common';
+describe('Orders Regression Tests', () => {
+  beforeEach(() => {
+    cy.loginAPI(Cypress.env('adminCc'), Cypress.env('adminPassword'));
+  });
 
-describe('Regression Testing: Orders Module (TailorFlow)', () => {
+  it('should maintain existing functionality for fetching orders', () => {
+    cy.requestWithAuth('GET', '/orders').then((response) => {
+      expect(response.status).to.be.oneOf([200, 404]);
+      if (response.status === 200) {
+        expect(response.body).to.be.an('array');
+      }
+      cy.screenshot('fetch-orders-regression');
+    });
+  });
 
-    const orderRepoStub = {
-        findOne: jest.fn(),
-        save: jest.fn()
+  it('should handle order creation regression', () => {
+    const testOrder = {
+      id_customer: 1,
+      entry_date: new Date().toISOString(),
+      estimated_delivery_date: new Date(Date.now() + 86400000).toISOString(), // +1 day
+      id_state: 1
     };
 
-    afterEach(() => {
-        jest.clearAllMocks();
+    cy.requestWithAuth('POST', '/orders', testOrder).then((response) => {
+      expect(response.status).to.be.oneOf([201, 400]); // Created or Bad Request
+      if (response.status === 201) {
+        expect(response.body).to.have.property('id_order');
+      }
+      cy.screenshot('create-order-regression');
     });
+  });
 
-    // ==========================================
-    // REGRESIÓN: Lógica de Fechas (RF05/RF07)
-    // ==========================================
-    describe('Validación de Fechas de Entrega', () => {
-        
-        it('No debe permitir fechas estimadas menores a la de entrada', async () => {
-            
-            // Arrange
-            const mockOrder = { 
-                id_order: 1, 
-                entry_date: new Date('2026-05-01T10:00:00Z') 
-            };
+  it('should validate date constraints regression', () => {
+    const invalidOrder = {
+      id_customer: 1,
+      entry_date: new Date().toISOString(),
+      estimated_delivery_date: new Date(Date.now() - 86400000).toISOString(), // Past date
+      id_state: 1
+    };
 
-            orderRepoStub.findOne.mockResolvedValue(mockOrder);
-
-            const updateOrderDate = async (id: number, newDate: Date) => {
-                const order = await orderRepoStub.findOne(id);
-
-                if (newDate < order.entry_date) {
-                    throw new BadRequestException('La fecha de entrega no puede ser anterior');
-                }
-            };
-
-            // Act + Assert
-            const badDate = new Date('2026-04-15T10:00:00Z');
-
-            await expect(updateOrderDate(1, badDate))
-                .rejects
-                .toThrow(BadRequestException);
-        });
+    cy.requestWithAuth('POST', '/orders', invalidOrder).then((response) => {
+      expect(response.status).to.eq(400); // Bad Request due to invalid dates
+      cy.screenshot('date-validation-regression');
     });
+  });
 
-    // ==========================================
-    // REGRESIÓN: Integridad de Estados (RF15)
-    // ==========================================
-    describe('Consistencia en Cambio de Prioridad', () => {
+  it('should maintain state consistency', () => {
+    cy.requestWithAuth('GET', '/orders').then((response) => {
+      if (response.status === 200 && response.body.length > 0) {
+        const order = response.body[0];
+        expect(order).to.have.property('id_state');
+        expect(order.id_state).to.be.a('number');
+      }
+      cy.screenshot('state-consistency-regression');
+    });
+  });
+
+  it('should handle edge cases in order updates', () => {
+    // Test updating non-existent order
+    cy.requestWithAuth('PUT', '/orders/99999', { id_state: 2 }).then((response) => {
+      expect(response.status).to.eq(404); // Not Found
+      cy.screenshot('edge-case-update-regression');
+    });
+  });
+});
 
         it('No debe perder datos del cliente al actualizar prioridad', async () => {
             

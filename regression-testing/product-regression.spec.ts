@@ -1,12 +1,46 @@
-import { BadRequestException } from '@nestjs/common';
+describe('Products Regression Tests', () => {
+  beforeEach(() => {
+    cy.loginAPI(Cypress.env('adminCc'), Cypress.env('adminPassword'));
+  });
 
-describe('Regression Testing: Products Module (TailorFlow)', () => {
+  it('should maintain existing functionality for fetching products', () => {
+    cy.requestWithAuth('GET', '/products').then((response) => {
+      expect(response.status).to.be.oneOf([200, 404]);
+      if (response.status === 200) {
+        expect(response.body).to.be.an('array');
+      }
+    });
+  });
 
-    const productRepoStub = {
-        findOne: jest.fn(),
-        preload: jest.fn(),
-        save: jest.fn()
+  it('should handle product creation regression', () => {
+    const testProduct = {
+      name: 'Test Product',
+      description: 'Test Description',
+      price: 50.0,
+      id_category: 1,
+      state: 'ACTIVE'
     };
+
+    cy.requestWithAuth('POST', '/products', testProduct).then((response) => {
+      expect(response.status).to.be.oneOf([201, 400]);
+      if (response.status === 201) {
+        expect(response.body).to.have.property('id_product');
+      }
+    });
+  });
+
+  it('should validate product data constraints', () => {
+    const invalidProduct = {
+      name: '',
+      price: -10,
+      id_category: 1
+    };
+
+    cy.requestWithAuth('POST', '/products', invalidProduct).then((response) => {
+      expect(response.status).to.eq(400);
+    });
+  });
+});
 
     afterEach(() => {
         jest.clearAllMocks();

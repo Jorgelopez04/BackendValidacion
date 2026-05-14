@@ -1,13 +1,34 @@
-import { ForbiddenException, NotFoundException } from '@nestjs/common';
+describe('Products Security Tests', () => {
+  beforeEach(() => {
+    cy.loginAPI(Cypress.env('adminCc'), Cypress.env('adminPassword'));
+  });
 
-describe('Security Testing: Products Module (TailorFlow)', () => {
+  it('should require authentication for products endpoint', () => {
+    cy.request({
+      method: 'GET',
+      url: '/products',
+      failOnStatusCode: false
+    }).then((response) => {
+      expect(response.status).to.eq(401);
+    });
+  });
 
-    let productRepoStub: any;
+  it('should allow authenticated user to access products', () => {
+    cy.requestWithAuth('GET', '/products').then((response) => {
+      expect(response.status).to.be.oneOf([200, 404]);
+    });
+  });
 
-    beforeEach(() => {
-        productRepoStub = {
-            findOne: jest.fn(),
-            preload: jest.fn(),
+  it('should validate product creation input', () => {
+    const invalidProduct = {
+      // Missing required fields
+    };
+
+    cy.requestWithAuth('POST', '/products', invalidProduct).then((response) => {
+      expect(response.status).to.eq(400);
+    });
+  });
+});
             save: jest.fn()
         };
     });

@@ -29,11 +29,10 @@ export class Order {
   @JoinColumn({ name: 'id_customer' })
   customer!: Customer;
 
+  // ✅ Eliminada la inicialización manual para permitir que TypeORM gestione la relación
   @OneToMany(() => Product, (product) => product.order)
   products!: Product[];
 
-  // 🔥 CLAVE PARA PASAR LOS TESTS
-  constructor() {
-    this.products = [];
-  }
+  // 🗑️ ELIMINADO EL CONSTRUCTOR COMPLETAMENTE
+  // El constructor vacío o con inicializaciones rompe la conexión con PostgreSQL en NestJS.
 }

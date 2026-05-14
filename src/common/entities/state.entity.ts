@@ -25,13 +25,13 @@ export class State {
     })
     nombre!: StateName;
 
-    // 🔥 FIX AQUÍ
+    // ✅ Eliminada la inicialización = []
     @OneToMany(() => Order, (order) => order.state)
-    orders: Order[] = [];
+    orders!: Order[];
 
     @OneToMany(() => Product, (product) => product.state)
-    products: Product[] = [];
+    products!: Product[];
 
     @OneToMany(() => Task, (task) => task.state)
-    tasks: Task[] = [];
+    tasks!: Task[];
 }

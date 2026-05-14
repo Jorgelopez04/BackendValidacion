@@ -1,22 +1,18 @@
-import { Category } from 'src/modules/categories/entities/category.entity';
-import { Order } from 'src/modules/orders/entities/order.entity';
-import { Task } from 'src/modules/tasks/entities/task.entity';
-import { State } from 'src/common/entities/state.entity';
-import {
-  Column,
-  Entity,
-  JoinColumn,
-  ManyToOne,
-  OneToMany,
-  PrimaryGeneratedColumn
-} from "typeorm";
+import { Category } from "src/modules/categories/entities/category.entity";
+import { Order } from "src/modules/orders/entities/order.entity";
+import { State } from "src/common/entities/state.entity";
+import { Task } from "src/modules/tasks/entities/task.entity";
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity('products')
 export class Product {
-
   @PrimaryGeneratedColumn({ name: 'id_product' })
   id_product!: number;
 
+  @Column()
+  name!: string;
+
+  // Agrega estas columnas explícitas para poder usarlas en los servicios
   @Column({ name: 'id_category' })
   id_category!: number;
 
@@ -24,34 +20,20 @@ export class Product {
   id_state!: number;
 
   @Column({ name: 'id_order', nullable: true })
-  id_order?: number;
-
-  @Column({ unique: true })
-  name!: string;
-
-  @Column({ nullable: true })
-  description?: string;
-
-  @Column({ nullable: true })
-  ref_photo?: string;
-
-  @Column({ nullable: true })
-  fabric?: string;
-
-  // 🔹 RELACIONES
+  id_order!: number;
 
   @ManyToOne(() => Category, (category) => category.products)
   @JoinColumn({ name: 'id_category' })
-  category?: Category; // 🔥 puede venir undefined
+  category!: Category;
+
+  @ManyToOne(() => Order, (order) => order.products)
+  @JoinColumn({ name: 'id_order' })
+  order!: Order;
 
   @ManyToOne(() => State)
   @JoinColumn({ name: 'id_state' })
-  state?: State; // 🔥 mismo caso
-
-  @ManyToOne(() => Order, (order) => order.products, { nullable: true })
-  @JoinColumn({ name: 'id_order' })
-  order?: Order; // 🔥 FIX importante
+  state!: State;
 
   @OneToMany(() => Task, (task) => task.product)
-  tasks: Task[] = []; // 🔥 FIX crítico
+  tasks!: Task[];
 }

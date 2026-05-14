@@ -15,14 +15,10 @@ export class Category {
   description?: string;
 
   @OneToMany(() => Flow, (flow) => flow.category)
-  flows!: Flow[];
+  flows!: Flow[]; // ❌ NO inicializar aquí
 
   @OneToMany(() => Product, (product) => product.category)
-  products!: Product[];
+  products!: Product[]; // ❌ NO inicializar aquí
 
-  // 🔥 CLAVE PARA PASAR LOS TESTS
-  constructor() {
-    this.flows = [];
-    this.products = [];
-  }
+  // 🗑️ ELIMINA EL CONSTRUCTOR COMPLETAMENTE
 }

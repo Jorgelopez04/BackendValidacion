@@ -1,12 +1,14 @@
-import { Controller, Get, Param, Patch, UseGuards} from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { GetUser } from 'src/common/decorators/get-user/get-user.decorator';
 import { TasksService } from './tasks.service';
 import { Employee } from '../employees/entities/employee.entity';
 import { BaseApplicationResponseDto } from 'src/common/dto/base-application-response.dto';
 import { TaskResponseDto } from './dto/task-response.dto';
+import { CreateTaskDto } from './dto/create-task.dto';
 import { RolesGuard } from 'src/guards/roles/roles.guard';
 import { Roles } from 'src/common/decorators/roles/roles.decorator';
+import { plainToInstance } from 'class-transformer';
 
 @Controller('tasks')
 @UseGuards(AuthGuard('jwt'))
@@ -40,13 +42,25 @@ export class TasksController {
 
     @Get(':id')
     @UseGuards(RolesGuard)
-    @Roles('Esqueletería', 'Corte', 'Tapicero', 'Costurero', 'Pintor')
+    @Roles('ADMIN', 'Esqueletería', 'Corte', 'Tapicero', 'Costurero', 'Pintor')
     async findById(@Param('id') id: string): Promise<BaseApplicationResponseDto<TaskResponseDto>> {
         const task = await this.tasksService.findById(+id);
         return {
             statusCode: 200,
             message: 'Tarea obtenida correctamente',
             data: task
+        };
+    }
+
+    @Post()
+    @UseGuards(RolesGuard)
+    @Roles('ADMIN')
+    async createTask(@Body() createTaskDto: CreateTaskDto): Promise<BaseApplicationResponseDto<TaskResponseDto>> {
+        const task = await this.tasksService.createTask(createTaskDto);
+        return {
+            statusCode: 201,
+            message: 'Tarea creada correctamente',
+            data: plainToInstance(TaskResponseDto, task, { excludeExtraneousValues: true })
         };
     }
 

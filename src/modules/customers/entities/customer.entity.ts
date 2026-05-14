@@ -3,7 +3,6 @@ import { Column, Entity, PrimaryGeneratedColumn, OneToMany } from "typeorm";
 
 @Entity('customers')
 export class Customer {
-
   @PrimaryGeneratedColumn({ name: 'id_customer', type: 'integer' })
   id_customer!: number;
 
@@ -17,5 +16,5 @@ export class Customer {
   phone!: string;
 
   @OneToMany(() => Order, (order) => order.customer)
-  orders: Order[] = []; // 🔥 FIX
+  orders!: Order[]; // ✅ Eliminado el "= []"
 }

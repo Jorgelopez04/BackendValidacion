@@ -40,5 +40,5 @@ export class Employee {
   role!: Role;
 
   @OneToMany(() => Task, (task) => task.employee)
-  tasks: Task[] = []; // ✅ FIX
+  tasks!: Task[] ; // ✅ FIX
 }
