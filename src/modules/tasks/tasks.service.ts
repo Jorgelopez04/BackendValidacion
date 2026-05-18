@@ -47,6 +47,12 @@ export class TasksService {
     return this.toDto(task);
   }
 
+  async findPreviousTaskByTaskId(idTask: number): Promise<TaskResponseDto | null> {
+    const task = await this.getTaskOrFail(idTask);
+    const previousTask = await this.findPreviousTask(task.id_product, task.sequence);
+    return previousTask ? this.toDto(previousTask) : null;
+  }
+
   async findAssignedTasks(employeeId: number): Promise<TaskResponseDto[]> {
     const tasks = await this.taskRepository.find({
       where: { id_employee: employeeId },
