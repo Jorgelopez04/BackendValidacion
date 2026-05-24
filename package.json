@@ -21,11 +21,13 @@
     "cypress:open": "cypress open",
     "cypress:run": "cypress run",
     "cypress:run:api": "cypress run --spec 'cypress/e2e/backend/*.cy.ts'",
-    "sonar": "npx sonar-scanner -Dsonar.token=TU_TOKEN"
+    "sonar": "npx sonar-scanner -Dsonar.token=TU_TOKEN",
+    "stagehand:openai": "jest --config ./test/jest-stagehand.json openai",
+    "stagehand:ollama": "jest --config ./test/jest-stagehand.json ollama"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
-    "@nestjs/config": "^4.0.2",
+    "@nestjs/config": "^4.0.4",
     "@nestjs/core": "^11.0.1",
     "@nestjs/jwt": "^11.0.1",
     "@nestjs/passport": "^11.0.5",
@@ -44,11 +46,13 @@
     "typeorm": "^0.3.28"
   },
   "devDependencies": {
+    "@browserbasehq/stagehand": "^1.0.0",
     "@eslint/eslintrc": "^3.2.0",
     "@eslint/js": "^9.18.0",
     "@nestjs/cli": "^11.0.0",
     "@nestjs/schematics": "^11.0.0",
     "@nestjs/testing": "^11.0.1",
+    "@playwright/test": "^1.60.0",
     "@types/bcrypt": "^6.0.0",
     "@types/chai": "^5.2.3",
     "@types/express": "^5.0.0",
@@ -59,11 +63,14 @@
     "@types/supertest": "^6.0.2",
     "chai": "^6.2.2",
     "cypress": "^15.15.0",
+    "dotenv": "^16.6.1",
     "eslint": "^9.18.0",
     "eslint-config-prettier": "^10.0.1",
     "eslint-plugin-prettier": "^5.2.2",
     "globals": "^16.0.0",
     "jest": "^30.0.0",
+    "ollama-ai-provider-v2": "^3.5.1",
+    "openai": "^6.39.0",
     "prettier": "^3.4.2",
     "sinon": "^21.1.2",
     "sonarqube-scanner": "^4.3.5",
@@ -75,7 +82,8 @@
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5.7.3",
-    "typescript-eslint": "^8.20.0"
+    "typescript-eslint": "^8.20.0",
+    "zod": "^4.4.3"
   },
   "jest": {
     "moduleFileExtensions": [
