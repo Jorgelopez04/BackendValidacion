@@ -1,0 +1,11 @@
+{
+  "name": "Ejemplo de prueba de regresión",
+  "steps": [
+    { "action": "goTo", "url": "https://tusitio.com" },
+    { "action": "click", "selector": "#login" },
+    { "action": "type", "selector": "#username", "text": "usuario" },
+    { "action": "type", "selector": "#password", "text": "contraseña" },
+    { "action": "click", "selector": "#submit" },
+    { "action": "assert", "selector": "#dashboard", "exists": true }
+  ]
+}
