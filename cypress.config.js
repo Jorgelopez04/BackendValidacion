@@ -20,7 +20,8 @@ module.exports = defineConfig({
           try {
             const tmp = path.join(__dirname, 'tmp_deepeval_payload.json');
             fs.writeFileSync(tmp, JSON.stringify(payload), { encoding: 'utf8' });
-            const py = path.join(__dirname, '.venv', 'Scripts', 'python.exe');
+            const venvPy = path.join(__dirname, '.venv', 'Scripts', 'python.exe');
+            const py = fs.existsSync(venvPy) ? venvPy : 'python';
             const script = path.join(__dirname, 'cypress', 'deepeval_task.py');
             const res = child_process.spawnSync(py, [script, tmp], { encoding: 'utf8' });
             const out = (res.stdout || '') + (res.stderr || '');
