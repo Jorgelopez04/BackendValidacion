@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell([System.IO.DriveInfo]::GetDrives\\(\\) | Select-Object Name, DriveType, IsReady, RootDirectory)",
+      "Read(//c/Users/USUARIO/**)",
+      "Bash(node -e \"const p = require\\('D:/Desktop/Frontend/package.json'\\); console.log\\(p.dependencies['@angular/material'] || p.devDependencies['@angular/material']\\)\")",
+      "Bash(node -e \"const f=require\\('fs'\\); ['test/e2e-helpers.ts','test/product-groq.e2e.ts','test/order-groq.e2e.ts','test/task-groq.e2e.ts','jest-stagehand.json'].forEach\\(p => console.log\\(p, f.existsSync\\(p\\) ? 'OK' : 'FALTA'\\)\\)\")"
+    ]
+  }
+}
