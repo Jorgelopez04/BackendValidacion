@@ -1,8 +1,0 @@
-{
-  "name": "Ejemplo de prueba de performance",
-  "steps": [
-    { "action": "goTo", "url": "https://tusitio.com" },
-    { "action": "waitForLoad" },
-    { "action": "measurePerformance", "selector": "body" }
-  ]
-}

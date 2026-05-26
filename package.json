@@ -22,8 +22,10 @@
     "cypress:run": "cypress run",
     "cypress:run:api": "cypress run --spec 'cypress/e2e/backend/*.cy.ts'",
     "sonar": "npx sonar-scanner -Dsonar.token=TU_TOKEN",
-    "stagehand:openai": "jest --config ./test/jest-stagehand.json openai",
-    "stagehand:ollama": "jest --config ./test/jest-stagehand.json ollama"
+    "stagehand:openai": "jest --config jest-stagehand.json --testPathPatterns openai",
+    "stagehand:ollama": "jest --config jest-stagehand.json --testPathPatterns ollama --runInBand",
+    "stagehand:gemini": "jest --config jest-stagehand.json --testPathPatterns gemini --runInBand",
+    "stagehand:groq": "jest --config jest-stagehand.json --testPathPatterns groq --runInBand --forceExit"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
@@ -46,7 +48,7 @@
     "typeorm": "^0.3.28"
   },
   "devDependencies": {
-    "@browserbasehq/stagehand": "^1.0.0",
+    "@browserbasehq/stagehand": "^1.14.0",
     "@eslint/eslintrc": "^3.2.0",
     "@eslint/js": "^9.18.0",
     "@nestjs/cli": "^11.0.0",
@@ -68,22 +70,23 @@
     "eslint-config-prettier": "^10.0.1",
     "eslint-plugin-prettier": "^5.2.2",
     "globals": "^16.0.0",
-    "jest": "^30.0.0",
+    "jest": "^30.4.2",
     "ollama-ai-provider-v2": "^3.5.1",
-    "openai": "^6.39.0",
+    "openai": "^4.104.0",
+    "playwright": "^1.60.0",
     "prettier": "^3.4.2",
     "sinon": "^21.1.2",
     "sonarqube-scanner": "^4.3.5",
     "source-map-support": "^0.5.21",
     "sqlite3": "^5.1.7",
     "supertest": "^7.0.0",
-    "ts-jest": "^29.2.5",
+    "ts-jest": "^29.4.11",
     "ts-loader": "^9.5.2",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5.7.3",
     "typescript-eslint": "^8.20.0",
-    "zod": "^4.4.3"
+    "zod": "^3.25.76"
   },
   "jest": {
     "moduleFileExtensions": [
@@ -117,5 +120,19 @@
       "text",
       "text-summary"
     ]
-  }
+  },
+  "main": "cypress.config.js",
+  "directories": {
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Jorgelopez04/BackendValidacion.git"
+  },
+  "keywords": [],
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Jorgelopez04/BackendValidacion/issues"
+  },
+  "homepage": "https://github.com/Jorgelopez04/BackendValidacion#readme"
 }

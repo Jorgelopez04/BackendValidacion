@@ -34,8 +34,14 @@ export class AuthService {
         const payload = {
             sub: validatedEmployee.id_employee,
             cc: validatedEmployee.cc,
-            id_rol: validatedEmployee.role.id_rol
+            id_rol: validatedEmployee.role.id_role   // id_role (con 'e') — campo real de RoleResponseDto
         };
+
+        console.log('[Auth] JWT payload generado:', {
+            sub: payload.sub,
+            cc: payload.cc,
+            id_rol: payload.id_rol,                  // debe ser 1 (admin) o 2 (employee)
+        });
 
         const accessToken = this.jwtService.sign(payload);
         

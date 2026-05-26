@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx tsc *)",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); [print\\(k,':',v\\) for k,v in d.get\\('scripts',{}\\).items\\(\\) if 'stagehand' in k or 'e2e' in k]\")",
+      "Bash(node -e \"const s = require\\('@browserbasehq/stagehand'\\); console.log\\(Object.keys\\(s\\)\\);\")",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); [print\\(k,':',v\\) for k,v in d.get\\('scripts',{}\\).items\\(\\) if 'ollama' in k.lower\\(\\) or 'stagehand' in k.lower\\(\\)]\")",
+      "Bash(ollama list *)",
+      "Bash(node -e ' *)",
+      "Bash(node -e \"const {zodResponseFormat} = require\\('openai/helpers/zod'\\); console.log\\(typeof zodResponseFormat\\);\")"
+    ]
+  }
+}
