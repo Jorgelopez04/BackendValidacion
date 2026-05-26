@@ -30,7 +30,7 @@ export class TasksController {
 
     @Get('assigned')
     @UseGuards(RolesGuard)
-    @Roles('Esqueletería', 'Corte', 'Tapicero', 'Costurero', 'Pintor')
+    @Roles('ADMIN', 'Esqueletería', 'Corte', 'Tapicero', 'Costurero', 'Pintor')
     async getAssignedTasks(@GetUser() user: Employee): Promise<BaseApplicationResponseDto<TaskResponseDto[]>> {
         const tasks = await this.tasksService.findAssignedTasks(user.id_employee);
         return {
@@ -49,6 +49,18 @@ export class TasksController {
             statusCode: 200,
             message: 'Tarea obtenida correctamente',
             data: task
+        };
+    }
+
+    @Get(':id/previous')
+    @UseGuards(RolesGuard)
+    @Roles('ADMIN', 'Esqueletería', 'Corte', 'Tapicero', 'Costurero', 'Pintor')
+    async findPreviousTask(@Param('id') idTask: string): Promise<BaseApplicationResponseDto<TaskResponseDto | null>> {
+        const previousTask = await this.tasksService.findPreviousTaskByTaskId(+idTask);
+        return {
+            statusCode: 200,
+            message: 'Tarea anterior obtenida correctamente',
+            data: previousTask
         };
     }
 
@@ -85,6 +97,21 @@ export class TasksController {
             statusCode: 201,
             message: 'Tarea completada exitosamente y fecha de fin registrada',
             data: updatedTask
+        };
+    }
+
+    @Patch(':id/assign')
+    @UseGuards(RolesGuard)
+    @Roles('ADMIN')
+    async assignEmployee(
+        @Param('id') idTask: string,
+        @Body('id_employee') idEmployee: number
+    ): Promise<BaseApplicationResponseDto<TaskResponseDto>> {
+        const task = await this.tasksService.assignEmployee(+idTask, idEmployee);
+        return {
+            statusCode: 200,
+            message: 'Empleado asignado correctamente',
+            data: plainToInstance(TaskResponseDto, task, { excludeExtraneousValues: true })
         };
     }
 

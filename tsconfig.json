@@ -9,7 +9,7 @@
     "target": "ES2021",
     "sourceMap": true,
     "outDir": "./dist",
-    "baseUrl": ".",
+    "baseUrl": "./",
     "incremental": true,
     "skipLibCheck": true,
     "strictNullChecks": true,
@@ -18,17 +18,18 @@
     "forceConsistentCasingInFileNames": true,
     "noFallthroughCasesInSwitch": false,
     "esModuleInterop": true,
-    "types": ["jest", "node","cypress"],
+    "types": ["jest", "node", "cypress"],
     "paths": {
-      "src/*": ["src/*"]
+      "src/*": ["./src/*"]
     }
   },
   "include": [
-  "src/**/*",
-  "testing/**/*",
-  "performance-testing/**/*",
-  "security-testing/**/*",
-  "regression-testing/**/*"
-],
-  "exclude": ["node_modules", "dist", "test"]
+    "src/**/*",
+    "test/**/*",
+    "testing/**/*",
+    "performance-testing/**/*",
+    "security-testing/**/*",
+    "regression-testing/**/*"
+  ],
+  "exclude": ["node_modules", "dist"]
 }

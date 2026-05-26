@@ -8,7 +8,7 @@ import { UpdateProductDto } from './dto/update-product.dto';
 import { RolesGuard } from 'src/guards/roles/roles.guard';
 import { Roles } from 'src/common/decorators/roles/roles.decorator';
 
-@Controller('products')
+@Controller(['products', 'catalog'])
 @UseGuards(AuthGuard('jwt'), RolesGuard) // Seguridad global aplicada correctamente
 export class ProductsController {
 
